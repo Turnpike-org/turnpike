@@ -1,0 +1,215 @@
+{
+  "runAt": "2026-08-11T20:20:17.956Z",
+  "network": "stellar:testnet",
+  "facilitatorUrl": "http://localhost:4022",
+  "demoServerUrl": "http://localhost:4021",
+  "asset": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+  "amount": "100000",
+  "buyer": "GBCWTQIVFXVSB467NNSASTKSXA4PXGC5ZBCXEXYXKYF2D2IB4C6MQLPG",
+  "seller": "GD5XZ5XK5AVQVTPQ4SAJ2ESW53Q2ZP2JVEGUDRSONKJHJKSOAPH5FKHA",
+  "facilitatorSigners": [
+    "GDALA7RS7B2XE253WL4RYN7DXZLZZMPDS2CWWXFJLLAQTKPE62VWUPTW"
+  ],
+  "stockClientPackages": {
+    "@x402/core": "2.21.0",
+    "@x402/fetch": "2.21.0",
+    "@x402/stellar": "2.21.0",
+    "@stellar/stellar-sdk": "16.1.0"
+  },
+  "settledTransaction": "957dd2348558fbeb27854fc4153828e97621425f63501c83cdedad748f88ebcc",
+  "explorerUrl": "https://stellar.expert/explorer/testnet/tx/957dd2348558fbeb27854fc4153828e97621425f63501c83cdedad748f88ebcc",
+  "checks": [
+    {
+      "group": "1. GET /supported",
+      "name": "responds 200 with a kinds array",
+      "passed": true,
+      "detail": {
+        "kinds": 1
+      },
+      "ms": 21
+    },
+    {
+      "group": "1. GET /supported",
+      "name": "advertises the exact scheme on stellar:testnet at x402 v2",
+      "passed": true,
+      "detail": {
+        "x402Version": 2,
+        "scheme": "exact",
+        "network": "stellar:testnet",
+        "extra": {
+          "areFeesSponsored": true
+        }
+      },
+      "ms": 0
+    },
+    {
+      "group": "1. GET /supported",
+      "name": "the Stellar extra block carries a boolean areFeesSponsored",
+      "passed": true,
+      "detail": {
+        "areFeesSponsored": true
+      },
+      "ms": 0
+    },
+    {
+      "group": "1. GET /supported",
+      "name": "publishes at least one valid facilitator signing address",
+      "passed": true,
+      "detail": {
+        "signers": [
+          "GDALA7RS7B2XE253WL4RYN7DXZLZZMPDS2CWWXFJLLAQTKPE62VWUPTW"
+        ]
+      },
+      "ms": 0
+    },
+    {
+      "group": "1. GET /supported",
+      "name": "does not advertise networks this MVP does not support",
+      "passed": true,
+      "detail": {
+        "networks": [
+          "stellar:testnet"
+        ]
+      },
+      "ms": 0
+    },
+    {
+      "group": "2. Stock x402 client completes a payment",
+      "name": "unpaid request returns 402 with well-formed payment terms",
+      "passed": true,
+      "detail": {
+        "scheme": "exact",
+        "network": "stellar:testnet",
+        "amount": "100000",
+        "asset": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        "payTo": "GD5XZ5XK5AVQVTPQ4SAJ2ESW53Q2ZP2JVEGUDRSONKJHJKSOAPH5FKHA",
+        "maxTimeoutSeconds": 120,
+        "extra": {
+          "areFeesSponsored": true
+        }
+      },
+      "ms": 4
+    },
+    {
+      "group": "2. Stock x402 client completes a payment",
+      "name": "stock wrapFetchWithPayment pays and receives the resource",
+      "passed": true,
+      "detail": {
+        "transaction": "957dd2348558fbeb27854fc4153828e97621425f63501c83cdedad748f88ebcc",
+        "payer": "GBCWTQIVFXVSB467NNSASTKSXA4PXGC5ZBCXEXYXKYF2D2IB4C6MQLPG",
+        "body": {
+          "resource": "paid-resource",
+          "message": "Payment settled on Stellar testnet. This JSON is the thing you bought.",
+          "servedAt": "2026-08-11T20:20:03.877Z"
+        }
+      },
+      "ms": 13409
+    },
+    {
+      "group": "2. Stock x402 client completes a payment",
+      "name": "the settled transaction succeeded on-chain",
+      "passed": true,
+      "detail": {
+        "hash": "957dd2348558fbeb27854fc4153828e97621425f63501c83cdedad748f88ebcc",
+        "ledger": 4091703,
+        "feeCharged": "20554",
+        "feeAccount": "GDALA7RS7B2XE253WL4RYN7DXZLZZMPDS2CWWXFJLLAQTKPE62VWUPTW",
+        "explorer": "https://stellar.expert/explorer/testnet/tx/957dd2348558fbeb27854fc4153828e97621425f63501c83cdedad748f88ebcc"
+      },
+      "ms": 974
+    },
+    {
+      "group": "2. Stock x402 client completes a payment",
+      "name": "the facilitator — not the payer — paid the network fee",
+      "passed": true,
+      "detail": {
+        "feePayer": "GDALA7RS7B2XE253WL4RYN7DXZLZZMPDS2CWWXFJLLAQTKPE62VWUPTW",
+        "feeCharged": "20554"
+      },
+      "ms": 239
+    },
+    {
+      "group": "3. Every rejection path returns a usable reason",
+      "name": "malformed payload — non-decodable transaction",
+      "passed": true,
+      "detail": {
+        "invalidReason": "invalid_exact_stellar_payload_malformed",
+        "invalidMessage": "The 'transaction' field is not a decodable base64 Stellar transaction envelope for this network. Send the transaction exactly as the client produced it — do not re-encode it."
+      },
+      "ms": 12
+    },
+    {
+      "group": "3. Every rejection path returns a usable reason",
+      "name": "malformed request — body is not an x402 request at all",
+      "passed": true,
+      "detail": {
+        "status": 400,
+        "invalidReason": "invalid_request_body"
+      },
+      "ms": 4
+    },
+    {
+      "group": "3. Every rejection path returns a usable reason",
+      "name": "insufficient amount — client signed less than the terms require",
+      "passed": true,
+      "detail": {
+        "invalidReason": "invalid_exact_stellar_payload_wrong_amount",
+        "invalidMessage": "The amount in the signed transaction does not equal the amount in the payment requirements. The 'exact' scheme requires an exact match."
+      },
+      "ms": 2265
+    },
+    {
+      "group": "3. Every rejection path returns a usable reason",
+      "name": "wrong asset — client signed a different token contract",
+      "passed": true,
+      "detail": {
+        "invalidReason": "invalid_exact_stellar_payload_wrong_asset",
+        "invalidMessage": "The token contract in the signed transaction is not the asset named in the payment requirements."
+      },
+      "ms": 1421
+    },
+    {
+      "group": "3. Every rejection path returns a usable reason",
+      "name": "wrong recipient — payment goes to someone other than payTo",
+      "passed": true,
+      "detail": {
+        "invalidReason": "invalid_exact_stellar_payload_wrong_recipient",
+        "invalidMessage": "The recipient in the signed transaction is not the 'payTo' address in the payment requirements."
+      },
+      "ms": 1357
+    },
+    {
+      "group": "3. Every rejection path returns a usable reason",
+      "name": "unsupported network — reason, not a bare 500",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "invalidReason": "unsupported_scheme_or_network"
+      },
+      "ms": 6
+    },
+    {
+      "group": "3. Every rejection path returns a usable reason",
+      "name": "replayed payload — the settled payment cannot be settled again",
+      "passed": true,
+      "detail": {
+        "originalTransaction": "957dd2348558fbeb27854fc4153828e97621425f63501c83cdedad748f88ebcc",
+        "replayReason": "invalid_exact_stellar_payload_simulation_failed",
+        "replayMessage": "Simulating the transfer against Soroban RPC failed. The usual cause is an insufficient balance of the payment asset in the payer's account, or a missing trustline."
+      },
+      "ms": 351
+    },
+    {
+      "group": "3. Every rejection path returns a usable reason",
+      "name": "replayed payload is also refused by /verify",
+      "passed": true,
+      "detail": {
+        "invalidReason": "invalid_exact_stellar_payload_simulation_failed",
+        "invalidMessage": "Simulating the transfer against Soroban RPC failed. The usual cause is an insufficient balance of the payment asset in the payer's account, or a missing trustline."
+      },
+      "ms": 259
+    }
+  ],
+  "passed": 17,
+  "failed": 0
+}
