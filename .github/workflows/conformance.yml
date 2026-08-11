@@ -1,0 +1,100 @@
+name: conformance
+
+# The conformance job spends real Stellar testnet XLM: it creates fresh
+# Friendbot-funded accounts on every run, brings the stack up with
+# docker compose, and makes a stock x402 client pay for a resource on
+# stellar:testnet. Nothing is mocked, and no secrets are needed — which is the
+# point: anyone can fork this repository and get the same green run.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: unit tests + typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: npm run install:all
+
+      - name: Typecheck
+        run: |
+          npm --prefix facilitator run typecheck
+          npm --prefix demo-server run typecheck
+
+      - name: Unit tests
+        run: npm --prefix facilitator test
+
+  conformance:
+    name: stock client pays on testnet
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: npm run install:all
+
+      - name: Create and fund testnet accounts
+        run: npm run setup
+
+      - name: Start the stack
+        run: docker compose up --build -d
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:4022/health >/dev/null 2>&1 \
+               && curl -fsS http://localhost:4021/health >/dev/null 2>&1; then
+              echo "both services healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "services did not become healthy" >&2
+          docker compose logs >&2
+          exit 1
+
+      - name: Run conformance harness
+        run: npm run conformance
+
+      - name: Show settled transaction
+        if: always()
+        run: |
+          if [ -f conformance-report.json ]; then
+            node -e "
+              const r = require('./conformance-report.json');
+              console.log('settled transaction:', r.settledTransaction);
+              console.log('explorer:', r.explorerUrl);
+              console.log('checks:', r.passed, 'passed,', r.failed, 'failed');
+            "
+          fi
+
+      - name: Upload conformance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-report
+          path: conformance-report.json
+
+      - name: Service logs
+        if: failure()
+        run: docker compose logs
