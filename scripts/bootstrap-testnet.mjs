@@ -167,6 +167,7 @@ const template = readFileSync(join(ROOT, ".env.example"), "utf8");
 const env = template
   .replace(/^FACILITATOR_SECRET_KEY=.*$/m, `FACILITATOR_SECRET_KEY=${accounts.facilitator.secret}`)
   .replace(/^SELLER_ADDRESS=.*$/m, `SELLER_ADDRESS=${accounts.seller.public}`)
+  .replace(/^SELLER_SECRET_KEY=.*$/m, `SELLER_SECRET_KEY=${accounts.seller.secret}`)
   .replace(/^BUYER_SECRET_KEY=.*$/m, `BUYER_SECRET_KEY=${accounts.buyer.secret}`);
 
 writeFileSync(ENV_PATH, env, { mode: 0o600 });

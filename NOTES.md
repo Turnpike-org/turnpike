@@ -129,9 +129,20 @@ no faucet visit, no wallet, and no shared secret — and what lets CI create fre
 accounts on every run instead of guarding a long-lived funded key.
 
 `PAYMENT_ASSET=usdc` switches to testnet USDC
-(`CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA`); the payer then
-needs testnet USDC from <https://faucet.circle.com/>. Any other `C…` address
-works too.
+(`CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA`). Two extra steps
+apply to any classic asset, and both are easy to lose an hour to:
+
+1. **Both** the payer and the recipient need a trustline to the issuer. A SAC
+   transfer to an account that does not trust the asset fails in simulation with
+   an opaque contract error, not "missing trustline".
+   `scripts/add-usdc-trustlines.mjs` adds them.
+2. Testnet USDC comes from <https://faucet.circle.com/>, which is a web form
+   with no scriptable API — hence the native XLM default.
+
+Verified: the same code settled 0.01 USDC in
+`538e1d8355e772cac97a8e3720e0f94ea1201941cf4d06f16f369eb885bc8cd3` (buyer
+20.00 → 19.99, seller 0.00 → 0.01, fee paid by the facilitator). Any other `C…`
+SEP-41 address works too.
 
 ---
 

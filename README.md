@@ -22,10 +22,11 @@ is exact about the line between the two.
 > A stock x402 client completes a real payment against this facilitator on
 > Stellar testnet, and here is the settled transaction.
 
+**Default demo — 0.01 XLM through the native Stellar Asset Contract:**
+
 ```
 transaction   957dd2348558fbeb27854fc4153828e97621425f63501c83cdedad748f88ebcc
 ledger        4091703                    successful: true
-amount        0.01 XLM (100000 atomic units, native Stellar Asset Contract)
 payer         GBCWTQIVFXVSB467NNSASTKSXA4PXGC5ZBCXEXYXKYF2D2IB4C6MQLPG
 fee paid by   GDALA7RS7B2XE253WL4RYN7DXZLZZMPDS2CWWXFJLLAQTKPE62VWUPTW  (the facilitator)
 fee charged   20554 stroops
@@ -33,10 +34,24 @@ fee charged   20554 stroops
 
 <https://stellar.expert/explorer/testnet/tx/957dd2348558fbeb27854fc4153828e97621425f63501c83cdedad748f88ebcc>
 
-The payer and the fee payer are different accounts: that is
+**Same code, same command, paying 0.01 testnet USDC** (`PAYMENT_ASSET=usdc`):
+
+```
+transaction   538e1d8355e772cac97a8e3720e0f94ea1201941cf4d06f16f369eb885bc8cd3
+ledger        4094044                    successful: true
+asset         CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA  (testnet USDC SAC)
+payer         GD64RY5SHL7NYHU67Q2FCVFNUA3EXPS6IJOBS6G6332T6OKWPT7HWMXX   20.00 → 19.99 USDC
+recipient     GC33UN4U3KIJRVOYDGZFACA563L76E76WEAN5CUIQMYDR6KI5PXSINBA    0.00 →  0.01 USDC
+fee paid by   GB4SYRSHYUR6VSSFAR55FPNUCFUNOW4EU24OXJXGVJSIAHJGW3O2BNAD  (the facilitator)
+fee charged   22973 stroops
+```
+
+<https://stellar.expert/explorer/testnet/tx/538e1d8355e772cac97a8e3720e0f94ea1201941cf4d06f16f369eb885bc8cd3>
+
+In both runs the payer and the fee payer are different accounts: that is
 `areFeesSponsored: true` from `/supported` being true on-chain, not just in
 JSON. The conformance harness asserts it by re-reading the transaction from
-Horizon on every run.
+Horizon on every run — all 17 checks passed in both.
 
 The terminal session that produced that transaction — from creating accounts to
 the final green run — is recorded verbatim in
@@ -184,9 +199,18 @@ Everything is environment variables; see [`.env.example`](.env.example).
 | `SELLER_ADDRESS` | *required* | Receives the payment |
 | `BUYER_SECRET_KEY` | *required* | Used by the conformance harness to pay |
 
-`PAYMENT_ASSET=usdc` runs the same demo in testnet USDC; the payer then needs
-testnet USDC from <https://faucet.circle.com/>, which is why it is not the
-default.
+`PAYMENT_ASSET=usdc` runs the same demo in testnet USDC — that is how the second
+transaction above was settled:
+
+```bash
+node scripts/add-usdc-trustlines.mjs        # buyer and seller must trust USDC first
+# fund the buyer at https://faucet.circle.com/ (Stellar testnet)
+PAYMENT_ASSET=usdc docker compose up -d
+PAYMENT_ASSET=usdc npm run conformance
+```
+
+That faucet visit is manual and cannot be scripted, which is the only reason
+USDC is not the default.
 
 The facilitator refuses to start if its own account is unfunded, because an
 unfunded account cannot pay fees and `/supported` would then be advertising

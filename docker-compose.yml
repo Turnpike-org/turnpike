@@ -24,6 +24,10 @@ services:
     env_file: .env
     environment:
       DEMO_SERVER_PORT: 4021
+      # Shell overrides win over .env, so `PAYMENT_ASSET=usdc docker compose up`
+      # switches the demo to testnet USDC without editing anything.
+      PAYMENT_ASSET: ${PAYMENT_ASSET:-native}
+      PAYMENT_AMOUNT: ${PAYMENT_AMOUNT:-100000}
       # Inside the compose network the facilitator answers by service name,
       # overriding the localhost value used for host-shell development.
       FACILITATOR_URL: http://facilitator:4022
