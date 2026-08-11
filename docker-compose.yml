@@ -1,0 +1,35 @@
+# x402 Stellar facilitator — testnet demo stack.
+#
+#   npm run setup      # create and fund testnet accounts, write .env
+#   docker compose up  # facilitator + demo resource server
+#   npm run conformance # stock x402 client pays, on testnet, for real
+#
+# Both services read secrets from .env (gitignored). Nothing here is intended
+# for mainnet.
+
+services:
+  facilitator:
+    build:
+      context: ./facilitator
+    env_file: .env
+    environment:
+      FACILITATOR_PORT: 4022
+    ports:
+      - "4022:4022"
+    restart: unless-stopped
+
+  demo-server:
+    build:
+      context: ./demo-server
+    env_file: .env
+    environment:
+      DEMO_SERVER_PORT: 4021
+      # Inside the compose network the facilitator answers by service name,
+      # overriding the localhost value used for host-shell development.
+      FACILITATOR_URL: http://facilitator:4022
+    ports:
+      - "4021:4021"
+    depends_on:
+      facilitator:
+        condition: service_healthy
+    restart: unless-stopped
