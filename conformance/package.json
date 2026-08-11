@@ -1,0 +1,21 @@
+{
+  "name": "@turnpike/conformance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "Conformance harness: a stock x402 client from public npm, paying against our facilitator. Depends on no code from this repository.",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "start": "node src/harness.mjs"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "16.1.0",
+    "@x402/core": "2.21.0",
+    "@x402/fetch": "2.21.0",
+    "@x402/stellar": "2.21.0",
+    "dotenv": "17.2.3"
+  }
+}
