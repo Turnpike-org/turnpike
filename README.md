@@ -25,14 +25,14 @@ is exact about the line between the two.
 **Default demo — 0.01 XLM through the native Stellar Asset Contract:**
 
 ```
-transaction   957dd2348558fbeb27854fc4153828e97621425f63501c83cdedad748f88ebcc
-ledger        4091703                    successful: true
-payer         GBCWTQIVFXVSB467NNSASTKSXA4PXGC5ZBCXEXYXKYF2D2IB4C6MQLPG
-fee paid by   GDALA7RS7B2XE253WL4RYN7DXZLZZMPDS2CWWXFJLLAQTKPE62VWUPTW  (the facilitator)
+transaction   f6c6fbcc19d2661d5b9a0d977f562a371411b5974c621e2b79688906bce31fd6
+ledger        4094092                    successful: true
+payer         GAQDKCQI3CIXVDIGXW47W5ISHGZDDFCCTJ7O6SDBUINQAZFNWYGNSJRK
+fee paid by   GCGPGN6NT3WGRPJ3B4SLZWXO7JHLDOHBIOO5PZZJFIMGOW2VPAC7NOGN  (the facilitator)
 fee charged   20554 stroops
 ```
 
-<https://stellar.expert/explorer/testnet/tx/957dd2348558fbeb27854fc4153828e97621425f63501c83cdedad748f88ebcc>
+<https://stellar.expert/explorer/testnet/tx/f6c6fbcc19d2661d5b9a0d977f562a371411b5974c621e2b79688906bce31fd6>
 
 **Same code, same command, paying 0.01 testnet USDC** (`PAYMENT_ASSET=usdc`):
 
@@ -53,9 +53,10 @@ In both runs the payer and the fee payer are different accounts: that is
 JSON. The conformance harness asserts it by re-reading the transaction from
 Horizon on every run — all 17 checks passed in both.
 
-The terminal session that produced that transaction — from creating accounts to
-the final green run — is recorded verbatim in
-[`docs/demo-session.txt`](docs/demo-session.txt).
+The terminal session that produced the first transaction — a fresh `git clone`,
+one command, accounts created from nothing, ending in that hash — is recorded
+verbatim in [`docs/demo-session.txt`](docs/demo-session.txt), with the machine
+readable results of both runs in [`docs/`](docs/).
 
 **Stock client used for conformance:** `@x402/fetch@2.21.0`, with
 `@x402/core@2.21.0`, `@x402/stellar@2.21.0` and `@stellar/stellar-sdk@16.1.0`,
