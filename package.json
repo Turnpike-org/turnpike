@@ -1,0 +1,24 @@
+{
+  "name": "x402-stellar-facilitator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "x402 facilitator for Stellar testnet (exact scheme) with a stock-client conformance harness",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "setup": "node scripts/bootstrap-testnet.mjs",
+    "install:all": "npm ci && npm --prefix facilitator ci && npm --prefix demo-server ci && npm --prefix conformance ci",
+    "install:all:nolock": "npm install && npm --prefix facilitator install && npm --prefix demo-server install && npm --prefix conformance install",
+    "build": "npm --prefix facilitator run build && npm --prefix demo-server run build",
+    "dev:facilitator": "npm --prefix facilitator run dev",
+    "dev:demo-server": "npm --prefix demo-server run dev",
+    "test": "npm --prefix facilitator test",
+    "conformance": "npm --prefix conformance start",
+    "demo": "./demo.sh"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "16.1.0"
+  }
+}

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Secrets — never commit. `.env.example` is the committed template.
+.env
+.env.*
+!.env.example
+
+# Generated proof artifacts
+conformance-report.json
+
+# Internal planning documents for the grant application; not part of the
+# published artifact.
+build_spec.md
+context.md
