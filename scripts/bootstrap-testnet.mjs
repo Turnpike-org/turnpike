@@ -15,12 +15,13 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { Keypair } from "@stellar/stellar-sdk";
+import { Keypair, rpc } from "@stellar/stellar-sdk";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const ENV_PATH = join(ROOT, ".env");
 const FRIENDBOT = "https://friendbot.stellar.org";
 const HORIZON = "https://horizon-testnet.stellar.org";
+const SOROBAN_RPC = process.env.STELLAR_RPC_URL ?? "https://soroban-testnet.stellar.org";
 
 const force = process.argv.includes("--force");
 
@@ -85,6 +86,46 @@ async function nativeBalance(address) {
   return account.balances?.find((b) => b.asset_type === "native")?.balance ?? null;
 }
 
+/**
+ * Waits until an account is visible from Soroban RPC.
+ *
+ * Horizon confirming a Friendbot payment is not enough: payments simulate
+ * against Soroban RPC, which lags Horizon and is itself load-balanced across
+ * nodes at different ledger heights. Skipping this leaves a clean clone failing
+ * its first payment with "account entry is missing" — the account exists, the
+ * node just has not seen it. Requiring several consecutive successful reads
+ * makes it likely every node behind the load balancer has caught up.
+ *
+ * @param address - Stellar address
+ * @param timeoutMs - How long to wait
+ * @returns Nothing
+ * @throws {Error} When the account never becomes visible
+ */
+async function waitForRpcVisibility(address, timeoutMs = 90_000) {
+  const server = new rpc.Server(SOROBAN_RPC);
+  const deadline = Date.now() + timeoutMs;
+  const requiredStreak = 3;
+  let streak = 0;
+  let lastError = "not visible";
+
+  while (Date.now() < deadline) {
+    try {
+      await server.getAccount(address);
+      streak += 1;
+      if (streak >= requiredStreak) return;
+    } catch (error) {
+      streak = 0;
+      lastError = error instanceof Error ? error.message : String(error);
+    }
+    await sleep(1_500);
+  }
+
+  throw new Error(
+    `${address} was funded but is still not visible from ${SOROBAN_RPC} (${lastError}). ` +
+      `Testnet RPC may be lagging; re-run this script.`,
+  );
+}
+
 if (existsSync(ENV_PATH) && !force) {
   process.stdout.write(
     ".env already exists — leaving it alone.\n" +
@@ -114,6 +155,12 @@ for (const role of roles) {
     );
   }
   process.stdout.write(` • ${role.padEnd(11)} ${balance} XLM\n`);
+}
+
+process.stdout.write("Waiting for Soroban RPC to catch up...\n");
+for (const role of roles) {
+  await waitForRpcVisibility(accounts[role].public);
+  process.stdout.write(` • ${role.padEnd(11)} visible to RPC\n`);
 }
 
 const template = readFileSync(join(ROOT, ".env.example"), "utf8");
