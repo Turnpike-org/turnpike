@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "astro",
-  "buildCommand": "SITE_BASE=/ SITE_URL=https://turnpike-zeta.vercel.app npm run build",
+  "buildCommand": "SITE_BASE=/ SITE_URL=https://turnpike.0xo.in npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "headers": [
