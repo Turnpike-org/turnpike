@@ -18,3 +18,6 @@ context.md
 
 # Draft of an upstream bug report, for review before posting; not part of the artifact.
 UPSTREAM-ISSUE-DRAFT.md
+
+# Cached probe artifacts fetched by scripts/collect-probe-results.sh
+.probe-results/

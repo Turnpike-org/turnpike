@@ -149,6 +149,65 @@ same green run.
 
 ---
 
+## Reliability: what the measurements do and do not support
+
+Payments here cross a public network, so "it works" is a claim with a failure
+rate attached. This section states what has actually been measured, and is
+deliberate about the gaps.
+
+**Observed, and reproducible:**
+
+| Measurement | Result |
+|---|---|
+| 30 consecutive conformance runs, one real payment each (local docker stack) | 30 passed, 0 failed, all 17 checks |
+| CI on every push — fresh runner, accounts created at run time | green, settlement re-verified on Horizon |
+| Probe on GitHub runners: 5 shards × 3 payments | 15 passed, 0 failed |
+| Median run time, payment included | ~20s |
+
+**The known fault, and its status.** The client and the facilitator each read
+the current ledger from Soroban RPC and independently compute how far ahead an
+authorization may expire, tolerating a 2-ledger disagreement. The public
+testnet endpoint is load-balanced across nodes that are not always that close
+together, so a valid payment can be rejected as
+`invalid_exact_stellar_signature_expiration_too_far` (NOTES.md §4.1). The
+facilitator retries that one rejection twice, 750ms apart, which re-samples the
+ledger height.
+
+**That retry has never fired in any measured window.** Sampling the failure
+predicate directly — read the ledger, wait 1.2s, read again — gave 0 hits in
+299 trials, with the client's read never landing ahead of the facilitator's
+(`{0: 182, -1: 117}`). Across all 45 measured payments the retry counter stayed
+at zero. So:
+
+- The 45/45 success rate does **not** demonstrate the retry working. It
+  demonstrates that when the RPC pool is healthy, the fault does not occur.
+- The retry is **implemented but unvalidated under measurement**. It rescued
+  one occurrence during interactive development, which is one data point, not
+  evidence that two retries are enough against a 3-ledger divergence.
+- An earlier note in this repository put the failure rate at "roughly 1 in 4".
+  That was an impression formed while debugging, not a measurement, and it is
+  **retracted**. The honest statement is that the rate depends on the health of
+  the RPC pool and we have measured it as zero in healthy windows and
+  non-zero — twice, uncounted — in one degraded window.
+
+A probe workflow runs five times a day at spread hours specifically to catch a
+degraded window; `scripts/collect-probe-results.sh` aggregates every run into
+raw per-payment counts, including whether the retry ever fired. Anyone can run
+it against this repository.
+
+**Two further limits, both documented rather than fixed:**
+
+- **One settlement in flight at a time.** Single-signer mode serialises on the
+  facilitator account's sequence number, and settlement takes 9-15s. Concurrent
+  payments can collide. Channel accounts are the fix and are out of scope here
+  (NOTES.md §4.2).
+- **`/verify` can briefly accept an already-settled payment.** Verification
+  simulates against whatever ledger the RPC node it reached has applied, so for
+  a few seconds after settlement a lagging node still simulates the spent
+  authorization. Re-settlement still fails on-chain, so this is staleness, not
+  a double-spend: settlement is the authority, verification is advice
+  (NOTES.md §4.3).
+
 ## How it fits together
 
 ```
