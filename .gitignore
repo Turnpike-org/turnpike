@@ -15,3 +15,6 @@ conformance-report.json
 # published artifact.
 build_spec.md
 context.md
+
+# Draft of an upstream bug report, for review before posting; not part of the artifact.
+UPSTREAM-ISSUE-DRAFT.md

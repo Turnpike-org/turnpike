@@ -1,0 +1,107 @@
+name: flakiness probe
+
+# Measures how often a payment fails, on neutral infrastructure.
+#
+# The Stellar testnet RPC endpoint is load-balanced across nodes at different
+# ledger heights, which can make the client and the facilitator disagree about
+# how far ahead an authorization may expire (see NOTES.md §4.1). This workflow
+# exists to put a number on how often that costs a payment, rather than
+# guessing from one developer's machine.
+#
+# Manual dispatch only — it spends testnet XLM and takes ~20 minutes.
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs_per_job:
+        description: "Conformance runs per job (5 jobs run in parallel)"
+        required: false
+        default: "3"
+
+jobs:
+  probe:
+    name: "probe ${{ matrix.shard }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: npm run install:all
+
+      - name: Create and fund testnet accounts
+        run: npm run setup
+
+      - name: Start the stack
+        run: docker compose up --build -d
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:4022/health >/dev/null 2>&1 \
+               && curl -fsS http://localhost:4021/health >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs >&2
+          exit 1
+
+      - name: Run the harness repeatedly
+        run: |
+          RUNS=${{ github.event.inputs.runs_per_job || '3' }}
+          echo "[]" > shard-results.json
+
+          for i in $(seq 1 "$RUNS"); do
+            before=$(docker compose logs facilitator 2>/dev/null | grep -c "ledger-height skew" || true)
+            set +e
+            npm run conformance > "run-$i.log" 2>&1
+            code=$?
+            set -e
+            after=$(docker compose logs facilitator 2>/dev/null | grep -c "ledger-height skew" || true)
+
+            passed=$(grep -oE '^[0-9]+ passed' "run-$i.log" | grep -oE '[0-9]+' | head -1)
+            failed=$(grep -oE '[0-9]+ failed' "run-$i.log" | grep -oE '[0-9]+' | head -1)
+            tx=$(grep -oE 'Settled transaction: [0-9a-f]+' "run-$i.log" | awk '{print $3}')
+
+            node -e "
+              const fs = require('fs');
+              const results = JSON.parse(fs.readFileSync('shard-results.json', 'utf8'));
+              results.push({
+                shard: ${{ matrix.shard }},
+                run: $i,
+                exit: $code,
+                passed: Number('${passed:-0}'),
+                failed: Number('${failed:-0}'),
+                skewRetries: $after - $before,
+                tx: '${tx:-}',
+              });
+              fs.writeFileSync('shard-results.json', JSON.stringify(results, null, 2));
+            "
+
+            echo "shard ${{ matrix.shard }} run $i: exit=$code passed=${passed:-?} failed=${failed:-?} skewRetries=$((after - before))"
+          done
+
+          cat shard-results.json
+
+      - name: Collect facilitator log
+        if: always()
+        run: docker compose logs facilitator > facilitator-shard-${{ matrix.shard }}.log
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-shard-${{ matrix.shard }}
+          path: |
+            shard-results.json
+            run-*.log
+            facilitator-shard-${{ matrix.shard }}.log
