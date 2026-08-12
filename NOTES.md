@@ -165,19 +165,40 @@ heights. Ten rapid `getLatestLedger()` calls returned a **3-ledger spread**:
 4091566 4091564 4091567 4091567 4091564 4091567 4091564 4091564 4091564 4091564
 ```
 
-The package's tolerance is 2 (`SIGNATURE_EXPIRATION_LEDGER_TOLERANCE`). So when
-the client's read lands on a node ahead of the facilitator's, a perfectly good
-payment is rejected as `invalid_exact_stellar_signature_expiration_too_far`. We
-saw this on roughly 1 in 4 payments before mitigating it.
+The package's tolerance is 2 (`SIGNATURE_EXPIRATION_LEDGER_TOLERANCE`). Since
+both sides derive the same offset, the check reduces to
+`clientLedger - facilitatorLedger > 2`: purely a function of which node each
+request reached. When the client's read lands on a node ≥3 ahead of the
+facilitator's, a perfectly good payment is rejected as
+`invalid_exact_stellar_signature_expiration_too_far`.
+
+**How often, measured.** The honest answer is that it depends entirely on the
+state of the RPC pool, and we have seen both extremes:
+
+| Window | Pool spread | Payments | Skew events |
+|---|---|---|---|
+| 2026-08-11 ~19:50-20:10 UTC | 3 ledgers | ~8-10 (interactive, reconstructed from logs) | 2 (one outright failure, one absorbed by the retry) |
+| 2026-08-12 ~05:00-06:00 UTC | ≤2 ledgers | **30 controlled runs, 30 passed** | **0** |
+
+In the healthy window we also sampled the failure predicate directly — read the
+ledger, wait 1.2s, read again, 299 times — and never once saw the client read
+land more than 0 ledgers ahead (`{0: 182, -1: 117}`). So in that window the
+un-retried failure rate was also indistinguishable from zero, and the 30/30
+success rate does **not** demonstrate the retry working: the retry never fired.
+What the retry demonstrably did is rescue the one `/settle` occurrence in the
+degraded window.
 
 **Our mitigation:** the facilitator retries that one rejection up to twice, 750ms
 apart (`facilitator/src/app.ts`). The retry re-samples the ledger height — usually
 landing on a different node — and relaxes nothing: the package's check runs in
-full on every attempt. Settle only retries when nothing was submitted.
+full on every attempt. Settle only retries when nothing was submitted. Whether
+two retries are enough against a 3-ledger divergence is not something 30 clean
+runs can answer.
 
 **The real fix** belongs upstream: either the client should ask the facilitator
 what expiration it will accept, or both sides should pin the same RPC node, or
-the tolerance should exceed the observed node spread.
+the tolerance should exceed the observed node spread. Written up as a bug report
+for `x402-foundation/x402`; not our call to file it under this repo's name.
 
 ### 4.2 One in-flight settlement at a time
 
