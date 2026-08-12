@@ -8,7 +8,8 @@ name: flakiness probe
 # exists to put a number on how often that costs a payment, rather than
 # guessing from one developer's machine.
 #
-# Manual dispatch only — it spends testnet XLM and takes ~20 minutes.
+# Runs on a temporary schedule (below) and on demand. It spends testnet XLM;
+# every account it uses is created by the run itself via Friendbot.
 
 on:
   workflow_dispatch:
@@ -41,9 +42,9 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4, 5]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
 
@@ -131,7 +132,7 @@ jobs:
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: probe-shard-${{ matrix.shard }}
           path: |
