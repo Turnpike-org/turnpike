@@ -40,6 +40,36 @@ describe("loadConfig", () => {
     ).toThrow(/Invalid facilitator configuration/);
   });
 
+  it("defaults the ledger-skew retry to a backoff longer than one ledger close", () => {
+    const config = loadConfig({ FACILITATOR_SECRET_KEY: validSecret } as NodeJS.ProcessEnv);
+
+    expect(config.ledgerSkewRetries).toBe(2);
+    // A ledger closes about every 5s; a shorter delay cannot outlast a lagging
+    // RPC node, which is the failure this retry exists to survive.
+    expect(config.ledgerSkewRetryDelayMs).toBeGreaterThanOrEqual(5_000);
+  });
+
+  it("rejects a retry budget that would outlast a resource server's patience", () => {
+    expect(() =>
+      loadConfig({
+        FACILITATOR_SECRET_KEY: validSecret,
+        LEDGER_SKEW_RETRIES: "5",
+        LEDGER_SKEW_RETRY_DELAY_MS: "20000",
+      } as NodeJS.ProcessEnv),
+    ).toThrow(/retry budget/);
+  });
+
+  it("allows the retry to be tuned or turned off", () => {
+    const config = loadConfig({
+      FACILITATOR_SECRET_KEY: validSecret,
+      LEDGER_SKEW_RETRIES: "0",
+      LEDGER_SKEW_RETRY_DELAY_MS: "8000",
+    } as NodeJS.ProcessEnv);
+
+    expect(config.ledgerSkewRetries).toBe(0);
+    expect(config.ledgerSkewRetryDelayMs).toBe(8_000);
+  });
+
   it("reads overrides from the environment", () => {
     const config = loadConfig({
       FACILITATOR_SECRET_KEY: validSecret,

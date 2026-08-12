@@ -206,11 +206,14 @@ What that supports, stated carefully:
 - The fault is **real, rare, and confirmed on neutral infrastructure**: 1
   failure in 63 measured payments overall, 1 in 15 within the single degraded
   probe.
-- The retry is **implemented and now known to be insufficient** in at least one
-  window. It is not a fix; a retry window shorter than a ledger close cannot
-  outlast a lagging node. Treat the mitigation as partial until either the
-  backoff spans a ledger or the upstream bound is negotiated rather than
-  guessed twice.
+- The retry has been **changed in response to that run, and the new shape is
+  itself unvalidated**. It was 2 attempts 750ms apart, which could not outlast a
+  ~5s ledger close; it is now 2 attempts 6s apart (`LEDGER_SKEW_RETRIES`,
+  `LEDGER_SKEW_RETRY_DELAY_MS`), so a lagging node has time to catch up. That
+  reasoning is sound and unit-tested, but **no degraded window has been observed
+  since the change**, so the fix is not yet demonstrated in the wild. It also
+  costs up to ~12s of added latency on a genuine rejection — a deliberate trade
+  of a slow "no" against a lost payment.
 - An earlier note in this repository put the failure rate at "roughly 1 in 4".
   That was an impression formed while debugging, not a measurement, and it is
   **retracted** in favour of the table above.
@@ -279,6 +282,8 @@ Everything is environment variables; see [`.env.example`](.env.example).
 | `STELLAR_NETWORK` | `stellar:testnet` | Testnet only; the service refuses to start on anything else |
 | `STELLAR_RPC_URL` | `https://soroban-testnet.stellar.org` | Soroban RPC |
 | `MAX_TRANSACTION_FEE_STROOPS` | `1000000` | Ceiling on the fee the facilitator will sponsor |
+| `LEDGER_SKEW_RETRIES` | `2` | Retries for the RPC ledger-skew rejection; `0` disables |
+| `LEDGER_SKEW_RETRY_DELAY_MS` | `6000` | Backoff between them; must outlast a ~5s ledger close |
 | `PAYMENT_ASSET` | `native` | `native`, `usdc`, or any SEP-41 `C…` contract address |
 | `PAYMENT_AMOUNT` | `100000` | Atomic units; Stellar assets have 7 decimals |
 | `SELLER_ADDRESS` | *required* | Receives the payment |

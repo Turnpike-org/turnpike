@@ -203,14 +203,23 @@ The 14:56 UTC probe caught it failing. All three attempts landed inside ~2.9s:
 14:57:38.123  /verify  rejected          ...signature_expiration_too_far
 ```
 
-A ledger closes every ~5s, so the whole retry window fits inside one ledger.
-Re-sampling can only help by reaching a different node; when it does not, the
-lagging node has not moved and every attempt sees the same divergence. Two
-retries 750ms apart is therefore the wrong shape for this fault: a backoff that
-spans at least one ledger close (~5-6s) would give the laggard time to advance,
-at the cost of adding that latency to a rejection. That change has not been
-made — it trades a real latency cost against a rare failure, and the decision
-belongs with whoever operates the service.
+A ledger closes every ~5s, so the whole retry window fitted inside one ledger.
+Re-sampling can only help by reaching a different node, or by the lagging node
+advancing; within 2.9s neither is guaranteed and neither happened.
+
+**Fixed as of 2026-08-12:** the backoff now spans a full ledger close. The retry
+is 2 attempts, 6s apart, both configurable (`LEDGER_SKEW_RETRIES`,
+`LEDGER_SKEW_RETRY_DELAY_MS`), and `loadConfig` refuses a combination exceeding
+a 24s budget because a resource server stops waiting at 30s. Worst case this
+adds ~12s of backoff plus verification time to a genuine rejection — a
+deliberate trade: a slow "no" beats a lost payment.
+
+**This fix is unvalidated in the wild.** The reasoning is sound and
+`test/retry.test.ts` asserts the attempt count and the spacing with fake
+timers, but no degraded window has occurred since the change. We have fixed the
+mechanism; we have not yet watched it save a payment. The probe keeps running,
+and `scripts/collect-probe-results.sh` will show a non-zero `skewRetries`
+column against a passing run the first time it does.
 
 **The real fix** belongs upstream: either the client should ask the facilitator
 what expiration it will accept, or both sides should pin the same RPC node, or

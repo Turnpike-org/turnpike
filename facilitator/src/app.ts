@@ -77,13 +77,22 @@ export function createFacilitator(config: Config, logger: Logger): x402Facilitat
  * facilitator's, a perfectly good payment is rejected as expiring "too far" in
  * the future.
  *
- * Retrying re-samples the ledger height — usually from a different node — which
- * is exactly what a client's own retry would do. It relaxes nothing: the check
- * still runs in full, in the package, on every attempt.
+ * Retrying re-samples the ledger height, which is exactly what a client's own
+ * retry would do. It relaxes nothing: the check still runs in full, in the
+ * package, on every attempt.
+ *
+ * **The backoff must outlast a ledger.** An earlier version retried twice,
+ * 750ms apart, and a probe caught it losing a payment anyway: all three
+ * attempts landed inside 2.9 seconds, so the lagging node never advanced and
+ * every attempt saw the same divergence. Re-sampling only helps if it reaches a
+ * different node *or* the laggard catches up, and only the second is
+ * guaranteed — after a ledger closes, roughly every 5 seconds. The default
+ * delay is therefore 6s, comfortably past one close.
+ *
+ * This costs latency on genuine rejections. That is the intended trade: a slow
+ * "no" beats losing a valid payment.
  */
 const LEDGER_SKEW_REASON = "invalid_exact_stellar_signature_expiration_too_far";
-const LEDGER_SKEW_RETRIES = 2;
-const LEDGER_SKEW_RETRY_DELAY_MS = 750;
 
 /**
  * Runs an operation, retrying only the ledger-skew rejection above.
@@ -92,23 +101,27 @@ const LEDGER_SKEW_RETRY_DELAY_MS = 750;
  * @param rejectionReason - Extracts the rejection code from a result, or undefined when it succeeded
  * @param logger - Logger for retry visibility
  * @param label - Endpoint name for the log line
+ * @param retries - How many extra attempts to make
+ * @param delayMs - How long to wait between attempts
  * @returns The last result produced
  */
-async function withLedgerSkewRetry<T>(
+export async function withLedgerSkewRetry<T>(
   operation: () => Promise<T>,
   rejectionReason: (result: T) => string | undefined,
   logger: Logger,
   label: string,
+  retries: number,
+  delayMs: number,
 ): Promise<T> {
   let result = await operation();
 
-  for (let attempt = 1; attempt <= LEDGER_SKEW_RETRIES; attempt++) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
     if (rejectionReason(result) !== LEDGER_SKEW_REASON) return result;
     logger.warn(
-      { endpoint: label, attempt, reason: LEDGER_SKEW_REASON },
+      { endpoint: label, attempt, delayMs, reason: LEDGER_SKEW_REASON },
       "retrying after RPC ledger-height skew",
     );
-    await new Promise((resolve) => setTimeout(resolve, LEDGER_SKEW_RETRY_DELAY_MS));
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
     result = await operation();
   }
 
@@ -252,6 +265,8 @@ export function createApp(config: Config, logger: Logger): FacilitatorApp {
           (result) => (result.isValid ? undefined : result.invalidReason),
           logger,
           "/verify",
+          config.ledgerSkewRetries,
+          config.ledgerSkewRetryDelayMs,
         ),
       );
       logOutcome({
@@ -322,6 +337,8 @@ export function createApp(config: Config, logger: Logger): FacilitatorApp {
           (result) => (!result.success && !result.transaction ? result.errorReason : undefined),
           logger,
           "/settle",
+          config.ledgerSkewRetries,
+          config.ledgerSkewRetryDelayMs,
         ),
       );
       logOutcome({

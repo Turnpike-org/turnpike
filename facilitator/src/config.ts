@@ -15,9 +15,22 @@ const ENV_NAMES: Record<string, string> = {
   network: "STELLAR_NETWORK",
   rpcUrl: "STELLAR_RPC_URL",
   maxTransactionFeeStroops: "MAX_TRANSACTION_FEE_STROOPS",
+  ledgerSkewRetries: "LEDGER_SKEW_RETRIES",
+  ledgerSkewRetryDelayMs: "LEDGER_SKEW_RETRY_DELAY_MS",
   logLevel: "LOG_LEVEL",
   corsOrigins: "CORS_ORIGINS",
 };
+
+/**
+ * Ceiling on time spent retrying a single request, in milliseconds.
+ *
+ * A resource server's facilitator client gives up after 30s by default
+ * (`FacilitatorConfig.timeoutMs` in `@x402/core`). Verification itself costs a
+ * few seconds per attempt on top of the backoff, so a retry budget beyond this
+ * would turn a recoverable rejection into a client-side timeout — trading one
+ * failure mode for a worse one.
+ */
+const MAX_RETRY_BUDGET_MS = 24_000;
 
 const secretKeySchema = z
   .string()
@@ -40,6 +53,8 @@ const configSchema = z.object({
   ),
   rpcUrl: z.url("STELLAR_RPC_URL must be a valid URL").default("https://soroban-testnet.stellar.org"),
   maxTransactionFeeStroops: z.coerce.number().int().positive().default(1_000_000),
+  ledgerSkewRetries: z.coerce.number().int().min(0).max(5).default(2),
+  ledgerSkewRetryDelayMs: z.coerce.number().int().min(0).max(20_000).default(6_000),
   logLevel: z
     .enum(["trace", "debug", "info", "warn", "error", "fatal", "silent"])
     .default("info"),
@@ -65,6 +80,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     network: env.STELLAR_NETWORK ?? SUPPORTED_NETWORK,
     rpcUrl: env.STELLAR_RPC_URL,
     maxTransactionFeeStroops: env.MAX_TRANSACTION_FEE_STROOPS,
+    ledgerSkewRetries: env.LEDGER_SKEW_RETRIES,
+    ledgerSkewRetryDelayMs: env.LEDGER_SKEW_RETRY_DELAY_MS,
     logLevel: env.LOG_LEVEL,
     corsOrigins: env.CORS_ORIGINS,
   });
@@ -79,6 +96,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     throw new Error(
       `Invalid facilitator configuration:\n${problems}\n` +
         `See .env.example, or run 'npm run setup' to generate funded testnet accounts.`,
+    );
+  }
+
+  const budgetMs = parsed.data.ledgerSkewRetries * parsed.data.ledgerSkewRetryDelayMs;
+  if (budgetMs > MAX_RETRY_BUDGET_MS) {
+    throw new Error(
+      `Invalid facilitator configuration:\n` +
+        `  - LEDGER_SKEW_RETRIES × LEDGER_SKEW_RETRY_DELAY_MS = ${budgetMs}ms, which exceeds the ` +
+        `${MAX_RETRY_BUDGET_MS}ms retry budget.\n` +
+        `    A resource server stops waiting after 30s, so a longer budget turns a recoverable ` +
+        `rejection into a client timeout.`,
     );
   }
 
