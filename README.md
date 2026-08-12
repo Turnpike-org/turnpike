@@ -173,22 +173,47 @@ together, so a valid payment can be rejected as
 facilitator retries that one rejection twice, 750ms apart, which re-samples the
 ledger height.
 
-**That retry has never fired in any measured window.** Sampling the failure
-predicate directly — read the ledger, wait 1.2s, read again — gave 0 hits in
-299 trials, with the client's read never landing ahead of the facilitator's
-(`{0: 182, -1: 117}`). Across all 45 measured payments the retry counter stayed
-at zero. So:
+**The retry is not sufficient, and we have the run that proves it.** On
+2026-08-12 a scheduled probe hit a degraded window on a GitHub runner. The
+retry fired, was exhausted, and the payment still failed:
 
-- The 45/45 success rate does **not** demonstrate the retry working. It
-  demonstrates that when the RPC pool is healthy, the fault does not occur.
-- The retry is **implemented but unvalidated under measurement**. It rescued
-  one occurrence during interactive development, which is one data point, not
-  evidence that two retries are enough against a 3-ledger divergence.
+```
+14:57:35.974  /verify  retry attempt 1   invalid_exact_stellar_signature_expiration_too_far
+14:57:37.047  /verify  retry attempt 2   invalid_exact_stellar_signature_expiration_too_far
+14:57:38.123  /verify  rejected          invalid_exact_stellar_signature_expiration_too_far
+```
+
+All three attempts fell inside ~2.9 seconds — shorter than one ~5s ledger
+close. Re-sampling only helps if it reaches a *different* node or the lagging
+node advances, and within 2.9s neither happened. That conformance run reported
+13/17 with the payment and its three dependent checks failing.
+
+Measured to date, every payment counted:
+
+| Where | Payments | Failed | Runs where the skew retry fired |
+|---|---|---|---|
+| Local docker stack, healthy window | 30 | 0 | 0 |
+| CI on push (one payment per push) | 3 | 0 | 0 |
+| Scheduled probes on GitHub runners | 30 | **1** | **1** (exhausted, payment lost) |
+| **Total** | **63** | **1** | **1** |
+
+Direct sampling of the failure predicate during a healthy window — read the
+ledger, wait 1.2s, read again — gave 0 hits in 299 trials
+(`{0: 182, -1: 117}`).
+
+What that supports, stated carefully:
+
+- The fault is **real, rare, and confirmed on neutral infrastructure**: 1
+  failure in 63 measured payments overall, 1 in 15 within the single degraded
+  probe.
+- The retry is **implemented and now known to be insufficient** in at least one
+  window. It is not a fix; a retry window shorter than a ledger close cannot
+  outlast a lagging node. Treat the mitigation as partial until either the
+  backoff spans a ledger or the upstream bound is negotiated rather than
+  guessed twice.
 - An earlier note in this repository put the failure rate at "roughly 1 in 4".
   That was an impression formed while debugging, not a measurement, and it is
-  **retracted**. The honest statement is that the rate depends on the health of
-  the RPC pool and we have measured it as zero in healthy windows and
-  non-zero — twice, uncounted — in one degraded window.
+  **retracted** in favour of the table above.
 
 A probe workflow runs five times a day at spread hours specifically to catch a
 degraded window; `scripts/collect-probe-results.sh` aggregates every run into

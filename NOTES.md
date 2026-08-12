@@ -175,10 +175,12 @@ facilitator's, a perfectly good payment is rejected as
 **How often, measured.** The honest answer is that it depends entirely on the
 state of the RPC pool, and we have seen both extremes:
 
-| Window | Pool spread | Payments | Skew events |
-|---|---|---|---|
-| 2026-08-11 ~19:50-20:10 UTC | 3 ledgers | ~8-10 (interactive, reconstructed from logs) | 2 (one outright failure, one absorbed by the retry) |
-| 2026-08-12 ~05:00-06:00 UTC | ≤2 ledgers | **30 controlled runs, 30 passed** | **0** |
+| Window | Where | Payments | Failed | Skew events |
+|---|---|---|---|---|
+| 2026-08-11 ~19:50-20:10 UTC | local, interactive | ~8-10 (reconstructed from logs) | 1 | 2 (one absorbed by the retry) |
+| 2026-08-12 ~05:00-06:00 UTC | local, controlled | 30 | 0 | 0 |
+| 2026-08-12 14:17 UTC | GitHub runners (probe) | 15 | 0 | 0 |
+| 2026-08-12 14:56 UTC | GitHub runners (probe) | 15 | **1** | **1, retry exhausted** |
 
 In the healthy window we also sampled the failure predicate directly — read the
 ledger, wait 1.2s, read again, 299 times — and never once saw the client read
@@ -188,12 +190,27 @@ success rate does **not** demonstrate the retry working: the retry never fired.
 What the retry demonstrably did is rescue the one `/settle` occurrence in the
 degraded window.
 
-**Our mitigation:** the facilitator retries that one rejection up to twice, 750ms
-apart (`facilitator/src/app.ts`). The retry re-samples the ledger height — usually
-landing on a different node — and relaxes nothing: the package's check runs in
-full on every attempt. Settle only retries when nothing was submitted. Whether
-two retries are enough against a 3-ledger divergence is not something 30 clean
-runs can answer.
+**Our mitigation, and its measured limit.** The facilitator retries that one
+rejection up to twice, 750ms apart (`facilitator/src/app.ts`). It re-samples the
+ledger height and relaxes nothing: the package's check runs in full on every
+attempt, and settle only retries when nothing was submitted.
+
+The 14:56 UTC probe caught it failing. All three attempts landed inside ~2.9s:
+
+```
+14:57:35.974  /verify  retry attempt 1   ...signature_expiration_too_far
+14:57:37.047  /verify  retry attempt 2   ...signature_expiration_too_far
+14:57:38.123  /verify  rejected          ...signature_expiration_too_far
+```
+
+A ledger closes every ~5s, so the whole retry window fits inside one ledger.
+Re-sampling can only help by reaching a different node; when it does not, the
+lagging node has not moved and every attempt sees the same divergence. Two
+retries 750ms apart is therefore the wrong shape for this fault: a backoff that
+spans at least one ledger close (~5-6s) would give the laggard time to advance,
+at the cost of adding that latency to a rejection. That change has not been
+made — it trades a real latency cost against a rare failure, and the decision
+belongs with whoever operates the service.
 
 **The real fix** belongs upstream: either the client should ask the facilitator
 what expiration it will accept, or both sides should pin the same RPC node, or
