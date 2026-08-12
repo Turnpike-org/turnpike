@@ -190,7 +190,7 @@ close. Re-sampling only helps if it reaches a *different* node or the lagging
 node advances, and within 2.9s neither happened. That conformance run reported
 13/17 with the payment and its three dependent checks failing.
 
-Measured to date, every payment counted:
+Measured to date, every payment counted. This is a snapshot, not a live figure — the scheduled probe keeps paying, so re-run `scripts/collect-probe-results.sh` for the current numbers:
 
 | Where | Payments | Failed | Runs where the skew retry fired |
 |---|---|---|---|

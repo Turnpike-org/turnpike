@@ -231,20 +231,20 @@ const notBuilt = [
 
       <div class="counts">
         <div class="count">
-          <span class="num">66</span>
-          <span class="label">real payments measured on Stellar testnet</span>
+          <span class="num is-accent">1</span>
+          <span class="label">real settled payment per CI run, every run, no exceptions</span>
         </div>
         <div class="count">
-          <span class="num is-accent">65</span>
-          <span class="label">settled successfully</span>
-        </div>
-        <div class="count">
-          <span class="num is-warn">1</span>
-          <span class="label">failed, to a documented upstream RPC issue</span>
+          <span class="num">17</span>
+          <span class="label">conformance checks each run must pass</span>
         </div>
         <div class="count">
           <span class="num">0</span>
           <span class="label">secrets stored in CI — accounts are created per run</span>
+        </div>
+        <div class="count">
+          <span class="num">0</span>
+          <span class="label">rejections without a reason code and a readable message</span>
         </div>
       </div>
 
@@ -259,10 +259,15 @@ const notBuilt = [
           />
         </a>
         <span>
-          Counted as of 12 August 2026: 36 payments on GitHub-hosted runners, 30 on a local stack.
-          The single failure is{" "}
-          <a href={`${REPO}/blob/main/NOTES.md`} rel="noopener">written up in full</a>, including
-          why the mitigation that followed is not yet proven.
+          A scheduled probe keeps paying on testnet, so the running totals move daily and are not
+          kept here. The current snapshot — payments made, payments failed, and every failure
+          analysed — lives in the{" "}
+          <a href={`${REPO}#reliability-what-the-measurements-do-and-do-not-support`} rel="noopener">
+            README
+          </a>{" "}
+          and in the raw{" "}
+          <a href={`${REPO}/actions/workflows/flakiness-probe.yml`} rel="noopener">CI artifacts</a>
+          {" "}behind it. Yes, there has been a failure; it is written up in full.
         </span>
       </p>
     </div>
