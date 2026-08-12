@@ -1,0 +1,415 @@
+---
+import Base from "../layouts/Base.astro";
+
+const REPO = "https://github.com/Turnpike-org/turnpike";
+const EXPLORER = "https://stellar.expert/explorer/testnet/tx";
+
+/*
+  Every figure below is traceable: transaction hashes resolve on a public
+  explorer, and the counts come from CI artifacts collected by
+  scripts/collect-probe-results.sh in the repository. Nothing here is rounded,
+  estimated, or aspirational — see the honesty section further down for what is
+  deliberately absent.
+*/
+const transactions = [
+  {
+    label: "Payment in XLM, from a clean clone",
+    meta: "ledger 4094092",
+    hash: "f6c6fbcc19d2661d5b9a0d977f562a371411b5974c621e2b79688906bce31fd6",
+    facts: [
+      ["asset", "native Stellar Asset Contract"],
+      ["amount", "0.01 XLM"],
+      ["payer", "GAQDKCQI…SJRK"],
+      ["fee paid by", "GCGPGN6N…NOGN — the facilitator"],
+    ],
+  },
+  {
+    label: "Same code, paying testnet USDC",
+    meta: "ledger 4094044",
+    hash: "538e1d8355e772cac97a8e3720e0f94ea1201941cf4d06f16f369eb885bc8cd3",
+    facts: [
+      ["asset", "CBIELTK6…DAMA — testnet USDC"],
+      ["payer", "20.00 → 19.99 USDC"],
+      ["recipient", "0.00 → 0.01 USDC"],
+      ["fee paid by", "GB4SYRSH…BNAD — the facilitator"],
+    ],
+  },
+  {
+    label: "Payment made by continuous integration",
+    meta: "ledger 4104581",
+    hash: "b983f668aae5de59c88e512c510f1e95ca6654780eba2a3c1b903359934cd0ea",
+    facts: [
+      ["runner", "GitHub-hosted, no stored secrets"],
+      ["fee paid by", "GDUUUKVF…LW66N"],
+      ["that account", "created by Friendbot during the run"],
+      ["verified", "re-read from Horizon by the harness"],
+    ],
+  },
+];
+
+const steps = [
+  {
+    title: "A client asks for something it has not paid for",
+    body: "An ordinary GET, with no payment attached. The client is unmodified — the conformance suite uses wrapFetchWithPayment straight from the public @x402/fetch package.",
+    endpoints: [],
+  },
+  {
+    title: "The server answers 402 Payment Required",
+    body: "Terms travel in the PAYMENT-REQUIRED header: the scheme, the network, the SEP-41 token contract, the amount in atomic units, and the address to pay. The facilitator's fee-sponsorship posture rides along in the same block.",
+    endpoints: ["GET /supported"],
+  },
+  {
+    title: "The client signs a Soroban authorization entry",
+    body: "Not a blank cheque. The entry binds the token contract, the amount and the recipient, so the signature authorises exactly one transfer and nothing else. The client needs no XLM: it never pays a network fee.",
+    endpoints: [],
+  },
+  {
+    title: "Turnpike verifies, then settles",
+    body: "Verification simulates the transfer and checks the authorization — right asset, right amount, right recipient, signed by the payer, not expired. Settlement submits it with Turnpike's own account as the transaction source, so Turnpike pays the network fee.",
+    endpoints: ["POST /verify", "POST /settle"],
+  },
+  {
+    title: "The resource comes back with a settled hash",
+    body: "200, the thing the client asked for, and a PAYMENT-RESPONSE header carrying the transaction hash. Roughly twenty seconds end to end, most of it waiting for the ledger to close.",
+    endpoints: [],
+  },
+];
+
+const built = [
+  ["The facilitator", "/verify, /settle and /supported for the exact scheme on stellar:testnet."],
+  ["Fee sponsorship", "Turnpike's account is the transaction source and pays the fee; the payer holds no XLM."],
+  ["A conformance harness", "An unmodified client from public npm completes a real payment; runs in CI on every push."],
+  ["Explained rejections", "Every refusal returns a specific reason code and a human-readable message."],
+];
+
+const notBuilt = [
+  ["Bazaar discovery", "Designed and specified. Not implemented — there is no /resources endpoint and no catalogue."],
+  ["The upto scheme", "Designed. It needs a Soroban contract and a Stellar specification that does not exist yet."],
+  ["Mainnet", "Not supported and not advertised. The service refuses to start on stellar:pubnet."],
+  ["Concurrent settlement", "One payment in flight at a time. A channel-account pool is the known fix, not yet built."],
+];
+---
+
+<Base
+  title="Turnpike — an x402 payment facilitator for Stellar"
+  description="Open-source x402 payment facilitator for Stellar. Servers charge per request in stablecoins without running chain infrastructure; agents pay without holding XLM."
+>
+  <header class="hero">
+    <div class="wrap">
+      <span class="hero-mark"><span class="dot"></span> Stellar testnet · conformance green in CI</span>
+      <h1>Turnpike</h1>
+      <p class="hero-statement">
+        An open-source x402 payment facilitator for Stellar with native resource discovery.
+      </p>
+      <p class="hero-support">
+        Servers charge per request in stablecoins without running chain infrastructure. Agents pay
+        without holding XLM.
+      </p>
+      <div class="actions">
+        <a class="btn btn-primary" href={REPO}>Read the source</a>
+        <a class="btn" href="#quickstart">Run it in one command</a>
+      </div>
+      <p class="hero-status">
+        <span>facilitator: running on testnet</span>
+        <span class="sep">/</span>
+        <span>discovery: designed, not yet built</span>
+        <span class="sep">/</span>
+        <span>Apache-2.0</span>
+      </p>
+    </div>
+  </header>
+
+  <section id="problem">
+    <div class="wrap">
+      <p class="eyebrow">The problem</p>
+      <h2 class="section-title">Machines can't pay each other for small things.</h2>
+      <p class="section-lede">
+        Three gaps sit between an API that could be sold per request and a client that could buy
+        it.
+      </p>
+
+      <div class="panels">
+        <article class="panel">
+          <span class="idx">01</span>
+          <h3>Sellers can't charge per request</h3>
+          <p>
+            Card rails have minimums and merchant accounts that make a fraction of a cent
+            meaningless. Accepting crypto instead means running keys, nodes and fee management —
+            infrastructure that has nothing to do with the product.
+          </p>
+        </article>
+        <article class="panel">
+          <span class="idx">02</span>
+          <h3>Agents can't pay</h3>
+          <p>
+            An autonomous client needs a funded wallet and native gas before it can buy anything.
+            For software that spins up for one task and disappears, that bootstrapping problem is
+            the whole obstacle.
+          </p>
+        </article>
+        <article class="panel">
+          <span class="idx">03</span>
+          <h3>Paid endpoints aren't discoverable</h3>
+          <p>
+            There is no index of what is for sale. An agent can only buy from services it was
+            already told about, which caps the market at whatever a human wired up in advance.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <hr class="lane-rule" />
+
+  <section id="how">
+    <div class="wrap">
+      <p class="eyebrow">How it works</p>
+      <h2 class="section-title">One request, one payment, one ledger entry.</h2>
+      <p class="section-lede">
+        HTTP 402 has been reserved for payment since 1997. Turnpike is the toll booth that makes it
+        mean something: it verifies the payment, settles it on Stellar, and pays the network fee so
+        the buyer does not have to.
+      </p>
+
+      <div class="flow" id="flow">
+        <div class="flow-spine" aria-hidden="true"></div>
+        {
+          steps.map((step, index) => (
+            <article class="step" data-step>
+              <span class="step-num" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+                {step.endpoints.map((endpoint) => (
+                  <code class="endpoint">{endpoint}</code>
+                ))}
+              </div>
+            </article>
+          ))
+        }
+      </div>
+
+      <p class="note">
+        <strong>There are no custom smart contracts in Turnpike.</strong> Settlement runs through the
+        Stellar Asset Contract that already exists on-chain, and every cryptographic operation —
+        authorization-entry validation, transaction assembly, submission — belongs to the Apache-2.0{" "}
+        <code>@x402/stellar</code> package. Turnpike is the HTTP surface, the error mapping and the
+        account that pays the fee.
+      </p>
+    </div>
+  </section>
+
+  <hr class="lane-rule" />
+
+  <section id="proof" class="proof">
+    <div class="wrap">
+      <p class="eyebrow">Proof</p>
+      <h2 class="section-title">Every claim here is a link you can click.</h2>
+      <p class="section-lede">
+        These are settled transactions on Stellar testnet, not screenshots. Open any of them on a
+        block explorer and check the amount, the ledger, and which account paid the fee.
+      </p>
+
+      <div class="proof-grid">
+        {
+          transactions.map((tx) => (
+            <article class="tx">
+              <div class="tx-head">
+                <span class="tx-label">{tx.label}</span>
+                <span class="tx-meta">{tx.meta}</span>
+              </div>
+              <a class="hash" href={`${EXPLORER}/${tx.hash}`} rel="noopener">{tx.hash}</a>
+              <div class="tx-facts">
+                {tx.facts.map(([key, value]) => (
+                  <div><span>{key}</span>{value}</div>
+                ))}
+              </div>
+            </article>
+          ))
+        }
+      </div>
+
+      <div class="counts">
+        <div class="count">
+          <span class="num">66</span>
+          <span class="label">real payments measured on Stellar testnet</span>
+        </div>
+        <div class="count">
+          <span class="num is-accent">65</span>
+          <span class="label">settled successfully</span>
+        </div>
+        <div class="count">
+          <span class="num is-warn">1</span>
+          <span class="label">failed, to a documented upstream RPC issue</span>
+        </div>
+        <div class="count">
+          <span class="num">0</span>
+          <span class="label">secrets stored in CI — accounts are created per run</span>
+        </div>
+      </div>
+
+      <p class="badge-row">
+        <a href={`${REPO}/actions/workflows/conformance.yml`} rel="noopener">
+          <img
+            src="https://github.com/Turnpike-org/turnpike/actions/workflows/conformance.yml/badge.svg"
+            alt="Conformance workflow status"
+            width="176"
+            height="20"
+            loading="lazy"
+          />
+        </a>
+        <span>
+          Counted as of 12 August 2026: 36 payments on GitHub-hosted runners, 30 on a local stack.
+          The single failure is{" "}
+          <a href={`${REPO}/blob/main/NOTES.md`} rel="noopener">written up in full</a>, including
+          why the mitigation that followed is not yet proven.
+        </span>
+      </p>
+    </div>
+  </section>
+
+  <hr class="lane-rule" />
+
+  <section id="scope">
+    <div class="wrap">
+      <p class="eyebrow">What exists, and what doesn't</p>
+      <h2 class="section-title">The half that isn't built yet.</h2>
+      <p class="section-lede">
+        A payment facilitator that overstates itself is worse than useless, because the first thing
+        anyone does is test it. So: this is the line, precisely.
+      </p>
+
+      <div class="ledger">
+        <div class="ledger-col">
+          <h3>Built and running</h3>
+          <ul>
+            {
+              built.map(([name, detail]) => (
+                <li>
+                  <span class="tick" aria-hidden="true">✓</span>
+                  <span><b>{name}.</b> {detail}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <div class="ledger-col">
+          <h3>Designed, not implemented</h3>
+          <ul>
+            {
+              notBuilt.map(([name, detail]) => (
+                <li>
+                  <span class="cross" aria-hidden="true">—</span>
+                  <span><b>{name}.</b> {detail}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="lane-rule" />
+
+  <section id="quickstart">
+    <div class="wrap">
+      <p class="eyebrow">Quickstart</p>
+      <h2 class="section-title">Clone it and watch a payment settle.</h2>
+      <p class="section-lede">
+        One command, from nothing. It creates and funds testnet accounts through Friendbot, brings
+        the facilitator and a demo resource server up with Docker, then makes a stock x402 client
+        pay for real and prints the transaction hash.
+      </p>
+
+      <div class="code">
+        <div class="code-head">
+          <span>bash</span>
+          <button class="copy" type="button" data-copy>Copy</button>
+        </div>
+        <pre><code><span class="prompt">$</span> git clone https://github.com/Turnpike-org/turnpike
+<span class="prompt">$</span> cd turnpike
+<span class="prompt">$</span> ./demo.sh</code></pre>
+      </div>
+
+      <p class="after-code">
+        No faucet visit, no wallet, no shared secret — the default payment asset is the native XLM
+        Stellar Asset Contract precisely so a stranger can reproduce this unattended. Needs Node
+        22.12+ and Docker. Two to four minutes, most of it building images.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap footer-grid">
+      <p class="footer-note">
+        Turnpike is Apache-2.0, and is built on the Apache-2.0{" "}
+        <a href="https://www.npmjs.com/package/@x402/stellar" rel="noopener">@x402/stellar</a>{" "}
+        package. Typeset in Geist, under the SIL Open Font License.
+      </p>
+      <nav class="footer-links" aria-label="Elsewhere">
+        <a href={REPO} rel="noopener">Repository</a>
+        <a href="https://github.com/Turnpike-org" rel="noopener">Turnpike-org</a>
+        <a href="https://github.com/x402-foundation/x402" rel="noopener">x402 specification</a>
+        <a href={`${REPO}/blob/main/NOTES.md`} rel="noopener">Engineering notes</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script is:inline>
+    // Two small behaviours, no framework: reveal the flow steps in sequence as
+    // the section is read, and copy the quickstart. Both degrade to a fully
+    // usable page if this script never runs.
+    (function () {
+      var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var steps = Array.prototype.slice.call(document.querySelectorAll("[data-step]"));
+      var spine = document.querySelector(".flow-spine");
+
+      if (steps.length && "IntersectionObserver" in window && !reduced) {
+        var seen = 0;
+        var observer = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (!entry.isIntersecting) return;
+              var step = entry.target;
+              var index = steps.indexOf(step);
+              // Stagger by position so a fast scroll still reads as a sequence.
+              setTimeout(function () {
+                step.classList.add("is-active");
+                seen = Math.max(seen, index + 1);
+                if (spine) spine.style.setProperty("--fill", (seen / steps.length) * 100 + "%");
+              }, Math.min(index, 4) * 90);
+              observer.unobserve(step);
+            });
+          },
+          { rootMargin: "0px 0px -22% 0px", threshold: 0.35 },
+        );
+        steps.forEach(function (step) {
+          observer.observe(step);
+        });
+      } else {
+        steps.forEach(function (step) {
+          step.classList.add("is-active");
+        });
+        if (spine) spine.style.setProperty("--fill", "100%");
+      }
+
+      var button = document.querySelector("[data-copy]");
+      if (button && navigator.clipboard) {
+        button.addEventListener("click", function () {
+          var code = document.querySelector(".code pre code");
+          if (!code) return;
+          var text = code.innerText.replace(/^\$ /gm, "");
+          navigator.clipboard.writeText(text).then(function () {
+            button.textContent = "Copied";
+            button.setAttribute("data-copied", "true");
+            setTimeout(function () {
+              button.textContent = "Copy";
+              button.removeAttribute("data-copied");
+            }, 1800);
+          });
+        });
+      }
+    })();
+  </script>
+</Base>
