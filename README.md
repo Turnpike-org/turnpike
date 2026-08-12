@@ -1,6 +1,6 @@
 # Turnpike — x402 facilitator for Stellar
 
-**<https://turnpike.0xo.in/>**
+**<https://turnpike-zeta.vercel.app/>**
 
 An x402 **facilitator** for Stellar: the service that verifies and settles
 per-request payments on a seller's behalf, so a seller can charge for an API

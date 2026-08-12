@@ -40,12 +40,8 @@ jobs:
         run: npm --prefix site ci
 
       - name: Build
-        # Served from the root of a custom domain, not from /turnpike on
-        # github.io. Kept as env vars so reverting to the project-page URL is a
-        # two-line change, not a rebuild of every link.
-        env:
-          SITE_URL: https://turnpike.0xo.in
-          SITE_BASE: /
+        # Primary hosting is Vercel (see site/vercel.json); this Pages deploy is
+        # a fallback that serves from the project-page path.
         run: npm --prefix site run build
 
       - uses: actions/configure-pages@v6
