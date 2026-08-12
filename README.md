@@ -1,4 +1,6 @@
-# x402 facilitator for Stellar — testnet slice
+# Turnpike — x402 facilitator for Stellar
+
+**<https://turnpike-org.github.io/turnpike/>**
 
 An x402 **facilitator** for Stellar: the service that verifies and settles
 per-request payments on a seller's behalf, so a seller can charge for an API
