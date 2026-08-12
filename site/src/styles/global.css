@@ -385,7 +385,9 @@ section {
   background: var(--bg);
   font-family: var(--font-mono);
   font-size: 0.8125rem;
-  color: var(--text-faint);
+  /* Dim rather than faint: inside a step at 0.8 opacity, the faint token lands
+     at 3.78:1, below AA even for a decorative numeral. */
+  color: var(--text-dim);
   transition: border-color var(--step-slow), color var(--step-slow),
     background var(--step-slow);
 }
