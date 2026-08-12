@@ -17,7 +17,7 @@
 
   --text: #e9ebef;
   --text-dim: #99a0ab;
-  --text-faint: #6b727d;
+  --text-faint: #7c838e;
 
   /* Sodium-vapour amber. The only accent, used for emphasis and links. */
   --accent: #f2b33d;
@@ -363,8 +363,8 @@ section {
   grid-template-columns: 32px 1fr;
   gap: clamp(1rem, 3vw, 2rem);
   padding-block: clamp(1.25rem, 2.5vw, 1.75rem);
-  opacity: 0.34;
-  transform: translateY(6px);
+  opacity: 0.8;
+  transform: translateY(8px);
   transition: opacity var(--step-slow), transform var(--step-slow);
 }
 
