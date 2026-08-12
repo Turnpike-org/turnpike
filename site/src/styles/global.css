@@ -270,9 +270,15 @@ section {
     transform var(--step-fast);
 }
 
+/*
+  Hover changes the token, never `background` directly. Setting the property
+  here would beat .btn-primary:hover — which only overrides the token — and
+  paint the primary button dark while its foreground stayed near-black,
+  leaving the label invisible.
+*/
 .btn:hover {
   --btn-line: #2c323b;
-  background: var(--bg-raised);
+  --btn-bg: var(--bg-raised);
 }
 
 .btn:active {
