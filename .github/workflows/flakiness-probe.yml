@@ -18,6 +18,19 @@ on:
         required: false
         default: "3"
 
+  # TEMPORARY — remove after 2026-08-14.
+  #
+  # Spread across the clock on purpose: the fault this is looking for depends
+  # on the health of the public Soroban RPC pool, which varies through the day.
+  # A probe that always ran at the same hour would keep sampling the same
+  # conditions. Times are UTC.
+  schedule:
+    - cron: "13 1 * * *"
+    - cron: "47 6 * * *"
+    - cron: "21 11 * * *"
+    - cron: "39 16 * * *"
+    - cron: "7 21 * * *"
+
 jobs:
   probe:
     name: "probe ${{ matrix.shard }}"
@@ -87,8 +100,28 @@ jobs:
               fs.writeFileSync('shard-results.json', JSON.stringify(results, null, 2));
             "
 
-            echo "shard ${{ matrix.shard }} run $i: exit=$code passed=${passed:-?} failed=${failed:-?} skewRetries=$((after - before))"
+            retries=$((after - before))
+            echo "shard ${{ matrix.shard }} run $i: exit=$code passed=${passed:-?} failed=${failed:-?} skewRetries=$retries"
+
+            # Surface results without anyone having to download an artifact.
+            echo "| ${{ matrix.shard }} | $i | $code | ${passed:-?}/${failed:-?} | $retries | ${tx:-none} |" >> summary-rows.md
+
+            # The whole point of this workflow: shout when the fault appears.
+            if [ "$retries" -gt 0 ]; then
+              echo "::warning title=Ledger-skew retry fired::shard ${{ matrix.shard }} run $i needed $retries retry/retries"
+            fi
+            if [ "$code" -ne 0 ]; then
+              echo "::warning title=Conformance run failed::shard ${{ matrix.shard }} run $i exited $code"
+            fi
           done
+
+          {
+            echo "### Probe results — shard ${{ matrix.shard }}"
+            echo
+            echo "| shard | run | exit | passed/failed | skew retries | tx |"
+            echo "|---|---|---|---|---|---|"
+            cat summary-rows.md
+          } >> "$GITHUB_STEP_SUMMARY"
 
           cat shard-results.json
 
