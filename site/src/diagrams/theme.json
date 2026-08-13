@@ -1,0 +1,31 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "background": "#0a0b0d",
+    "primaryColor": "#101216",
+    "primaryTextColor": "#e9ebef",
+    "primaryBorderColor": "#2a2f38",
+    "lineColor": "#7c838e",
+    "secondaryColor": "#14171c",
+    "tertiaryColor": "#101216",
+    "fontFamily": "Geist, ui-sans-serif, system-ui, sans-serif",
+    "fontSize": "14px",
+    "actorBkg": "#101216",
+    "actorBorder": "#2a2f38",
+    "actorTextColor": "#e9ebef",
+    "actorLineColor": "#3a4049",
+    "signalColor": "#99a0ab",
+    "signalTextColor": "#e9ebef",
+    "labelBoxBkgColor": "#101216",
+    "labelBoxBorderColor": "#2a2f38",
+    "labelTextColor": "#e9ebef",
+    "noteBkgColor": "#1a1408",
+    "noteTextColor": "#f2b33d",
+    "noteBorderColor": "#5a4413",
+    "clusterBkg": "#0d0f13",
+    "clusterBorder": "#1c2027",
+    "nodeBorder": "#2a2f38",
+    "nodeTextColor": "#e9ebef",
+    "edgeLabelBackground": "#0a0b0d"
+  }
+}

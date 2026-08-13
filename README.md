@@ -190,18 +190,26 @@ close. Re-sampling only helps if it reaches a *different* node or the lagging
 node advances, and within 2.9s neither happened. That conformance run reported
 13/17 with the payment and its three dependent checks failing.
 
-Measured to date, every payment counted. This is a snapshot, not a live figure — the scheduled probe keeps paying, so re-run `scripts/collect-probe-results.sh` for the current numbers:
+Measured to date, every payment counted. This is a snapshot as of **13 August 2026, 23:12 UTC**, not a live figure — the scheduled probe keeps paying, so re-run `scripts/collect-probe-results.sh` for current numbers:
 
 | Where | Payments | Failed | Runs where the skew retry fired |
 |---|---|---|---|
 | Local docker stack, healthy window | 30 | 0 | 0 |
-| CI on push (one payment per push) | 3 | 0 | 0 |
-| Scheduled probes on GitHub runners | 30 | **1** | **1** (exhausted, payment lost) |
-| **Total** | **63** | **1** | **1** |
+| CI on push (one payment per push) | 15 | 0 | 0 |
+| Probes on GitHub runners (9 runs × 15) | 135 | **1** | **1** (exhausted, payment lost) |
+| **Total** | **180** | **1** | **1** |
+
+Settlement latency across the 135 probe settlements: min 1.3s, median 3.9s, max
+7.2s. An earlier "9–15s" figure in this file came from a handful of runs on a
+home connection and overstated it.
 
 Direct sampling of the failure predicate during a healthy window — read the
 ledger, wait 1.2s, read again — gave 0 hits in 299 trials
 (`{0: 182, -1: 117}`).
+
+The fault also looks **bursty rather than uniformly rare**: two events inside one
+hour on 12 August, then nothing across two days of five-times-daily sampling. A
+long clean streak is therefore weaker evidence than its size suggests.
 
 What that supports, stated carefully:
 

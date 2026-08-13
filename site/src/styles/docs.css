@@ -1,0 +1,403 @@
+/*
+  Documentation layout.
+
+  Same tokens, same fonts, same lane-marking motif as the landing page — this is
+  the product's own documentation, not a docs theme sitting next to it. The only
+  additions are a sidebar, prose rhythm, and tables that survive a phone.
+*/
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: #14100a;
+  padding: 0.6rem 1rem;
+  border-radius: 0 0 6px 0;
+  font-size: 0.875rem;
+  z-index: 20;
+}
+
+.skip:focus {
+  left: 0;
+}
+
+.docs-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+@media (min-width: 900px) {
+  .docs-shell {
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: clamp(2.5rem, 5vw, 4.5rem);
+  }
+}
+
+/* ── sidebar ────────────────────────────────────────────────────────────── */
+
+.docs-nav {
+  padding-block: 2.5rem 1rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+@media (min-width: 900px) {
+  .docs-nav {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding-block: 3.5rem 3rem;
+    border-bottom: 0;
+    border-right: 1px solid var(--line-soft);
+    padding-right: 1.5rem;
+  }
+}
+
+.docs-home {
+  display: inline-block;
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  text-decoration: none;
+  margin-bottom: 2rem;
+  letter-spacing: -0.01em;
+}
+
+.docs-home:hover {
+  color: var(--accent);
+}
+
+.docs-nav ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+  counter-reset: none;
+}
+
+.docs-nav ol > li > a {
+  display: grid;
+  grid-template-columns: 2.1rem 1fr;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.4rem 0.5rem;
+  margin-left: -0.5rem;
+  border-radius: 6px;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  transition: color var(--step-fast), background var(--step-fast);
+}
+
+.docs-nav ol > li > a:hover {
+  color: var(--text);
+  background: var(--bg-raised);
+}
+
+.docs-nav ol > li > a[aria-current="page"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.docs-nav .n {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.docs-nav ol > li > a[aria-current="page"] .n {
+  color: var(--accent);
+}
+
+.docs-nav .sub {
+  list-style: none;
+  margin: 0.25rem 0 0.75rem;
+  padding: 0 0 0 2.1rem;
+  display: grid;
+  gap: 0.1rem;
+  border-left: 1px solid var(--line-soft);
+}
+
+.docs-nav .sub a {
+  display: block;
+  padding: 0.2rem 0.5rem;
+  color: var(--text-faint);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.docs-nav .sub a:hover {
+  color: var(--text);
+}
+
+/* ── prose ──────────────────────────────────────────────────────────────── */
+
+.docs-main {
+  padding-block: clamp(2.5rem, 5vw, 4rem) 4rem;
+  min-width: 0;
+}
+
+.prose {
+  max-width: 72ch;
+}
+
+.prose h1 {
+  font-size: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+  letter-spacing: -0.038em;
+  margin-bottom: 1.5rem;
+}
+
+.prose h2 {
+  font-size: clamp(1.3rem, 1.1rem + 0.9vw, 1.65rem);
+  letter-spacing: -0.026em;
+  margin-top: 3.25rem;
+  margin-bottom: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+.prose h3 {
+  font-size: 1.075rem;
+  letter-spacing: -0.018em;
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose h1 + p,
+.prose h2 + p,
+.prose h3 + p {
+  margin-top: 0;
+}
+
+.prose p,
+.prose ul,
+.prose ol {
+  color: var(--text-dim);
+  margin-block: 1rem;
+}
+
+.prose li {
+  margin-block: 0.4rem;
+}
+
+.prose strong {
+  color: var(--text);
+  font-weight: 560;
+}
+
+.prose hr {
+  border: 0;
+  height: 1px;
+  margin-block: 3rem;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--line) 0 46px,
+    transparent 46px 74px
+  );
+}
+
+.prose blockquote {
+  margin: 1.75rem 0;
+  padding: 0.9rem 1.25rem;
+  border-left: 2px solid var(--accent-line);
+  background: var(--accent-soft);
+  border-radius: 0 6px 6px 0;
+}
+
+.prose blockquote p {
+  color: var(--text);
+  margin: 0;
+}
+
+.prose blockquote p + p {
+  margin-top: 0.6rem;
+}
+
+/* Inline code and hashes: mono is load-bearing here, not decoration. */
+.prose :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--text);
+  background: var(--bg-raised);
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  padding: 0.1em 0.34em;
+  word-break: break-word;
+}
+
+.prose a > code {
+  color: var(--accent);
+}
+
+.prose pre {
+  margin-block: 1.5rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow-x: auto;
+  font-size: 0.84rem;
+  line-height: 1.7;
+  background: var(--bg-sunken) !important;
+}
+
+.prose pre code {
+  font-family: var(--font-mono);
+}
+
+.heading-anchor {
+  margin-left: 0.5rem;
+  color: var(--text-faint);
+  text-decoration: none;
+  opacity: 0;
+  font-weight: 400;
+  transition: opacity var(--step-fast), color var(--step-fast);
+}
+
+.prose h2:hover .heading-anchor,
+.prose h3:hover .heading-anchor,
+.heading-anchor:focus {
+  opacity: 1;
+}
+
+.heading-anchor:hover {
+  color: var(--accent);
+}
+
+/* ── tables ─────────────────────────────────────────────────────────────── */
+
+/*
+  Tables carry most of the load-bearing detail in these docs — status,
+  measurements, error classes. On a narrow screen they scroll inside their own
+  box rather than pushing the page sideways.
+*/
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-block: 1.5rem;
+  font-size: 0.9rem;
+  display: block;
+  overflow-x: auto;
+  white-space: normal;
+}
+
+@media (min-width: 720px) {
+  .prose table {
+    display: table;
+  }
+}
+
+.prose th,
+.prose td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.65rem 1rem 0.65rem 0;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text-dim);
+}
+
+.prose th {
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  border-bottom-color: var(--line);
+  white-space: nowrap;
+}
+
+.prose td code {
+  white-space: nowrap;
+}
+
+/* ── diagrams ───────────────────────────────────────────────────────────── */
+
+.diagram {
+  margin: 2rem 0;
+}
+
+.diagram-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: var(--bg-sunken);
+  padding: 1.5rem 1rem;
+}
+
+.diagram svg {
+  display: block;
+  width: 100%;
+  min-width: 520px;
+  height: auto;
+  margin-inline: auto;
+}
+
+.diagram figcaption {
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+/* ── pager and footer ───────────────────────────────────────────────────── */
+
+.docs-pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+.pager-link {
+  display: grid;
+  gap: 0.25rem;
+  max-width: 46%;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  transition: border-color var(--step-fast), background var(--step-fast);
+}
+
+.pager-link:hover {
+  border-color: #2c323b;
+  background: var(--bg-raised);
+}
+
+.pager-link.is-next {
+  margin-left: auto;
+  text-align: right;
+}
+
+.pager-link span {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.docs-foot {
+  margin-top: 2.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-faint);
+  line-height: 1.6;
+}
+
+.docs-foot p {
+  margin: 0;
+  max-width: 68ch;
+}

@@ -1,0 +1,59 @@
+flowchart TB
+    subgraph clients["Clients"]
+        A["Agent runtime / MCP"]
+        B["Seller's resource server"]
+        C["Buyer SDK"]
+    end
+
+    subgraph turnpike["Turnpike"]
+        subgraph pay["Payment plane — synchronous"]
+            V["/verify"]
+            SE["/settle"]
+            SU["/supported"]
+            AE["Auth-entry validation"]
+            FS["Fee sponsorship"]
+            CP["Channel account pool"]
+        end
+        subgraph disc["Discovery plane — asynchronous"]
+            RES["/resources"]
+            SRCH["/search"]
+            CAT["Cataloging worker"]
+            RANK["Hybrid ranking index"]
+            INT["Listing integrity"]
+        end
+    end
+
+    subgraph data["State"]
+        PG[("Postgres — catalog + embeddings")]
+        RD[("Redis — nonces, rate limits, leases")]
+    end
+
+    subgraph chain["Stellar"]
+        RPC["Soroban RPC"]
+        SAC["SAC / SEP-41"]
+    end
+
+    A --> B
+    C --> B
+    B --> V
+    B --> SE
+    B --> SU
+    A --> SRCH
+    A --> RES
+
+    V --> AE
+    SE --> AE
+    SE --> CP
+    SE --> FS
+    CP --> RPC
+    FS --> RPC
+    RPC --> SAC
+
+    SE -.->|after settlement| CAT
+    CAT --> INT
+    INT --> PG
+    RANK --> PG
+    SRCH --> RANK
+    RES --> PG
+    AE --> RD
+    CP --> RD

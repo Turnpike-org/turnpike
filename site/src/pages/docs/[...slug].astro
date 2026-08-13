@@ -1,0 +1,124 @@
+---
+import Base from "../../layouts/Base.astro";
+import "../../styles/docs.css";
+
+/*
+  One route per markdown file in /docs, in the order the filenames imply.
+  Titles come from each file's first H1 so the sidebar cannot drift from the
+  page it points at.
+*/
+const modules = import.meta.glob("../../content/docs/*.md", { eager: true });
+
+/**
+ * Builds the ordered page list shared by every docs route.
+ *
+ * @returns Pages with slug, title, order and the rendered component
+ */
+function docPages() {
+  return Object.entries(modules)
+    .map(([path, mod]) => {
+      const file = path.split("/").pop() ?? "";
+      const [order, ...rest] = file.replace(/\.md$/, "").split(".");
+      const clean = (text) => text.replace(/#\s*$/, "").trim();
+      const headings = mod.getHeadings().map((h) => ({ ...h, text: clean(h.text) }));
+      return {
+        slug: rest.join("."),
+        order: Number(order),
+        title: headings.find((h) => h.depth === 1)?.text ?? rest.join(" "),
+        headings: headings.filter((h) => h.depth === 2),
+        Content: mod.Content,
+      };
+    })
+    .sort((a, b) => a.order - b.order);
+}
+
+export function getStaticPaths() {
+  const mods = import.meta.glob("../../content/docs/*.md", { eager: true });
+  return Object.entries(mods).map(([path, mod]) => {
+    const file = path.split("/").pop() ?? "";
+    const [order, ...rest] = file.replace(/\.md$/, "").split(".");
+    const slug = rest.join(".");
+    return { params: { slug }, props: { slug, order: Number(order) } };
+  });
+}
+
+const { slug } = Astro.props;
+const pages = docPages();
+const index = pages.findIndex((page) => page.slug === slug);
+const page = pages[index];
+const previous = pages[index - 1];
+const next = pages[index + 1];
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<Base
+  title={`${page.title} — Turnpike docs`}
+  description={`Turnpike documentation: ${page.title}. An open-source x402 payment facilitator for Stellar.`}
+>
+  <a class="skip" href="#doc">Skip to content</a>
+
+  <div class="docs-shell">
+    <aside class="docs-nav" aria-label="Documentation">
+      <a class="docs-home" href={`${base}/`}>← Turnpike</a>
+      <nav>
+        <ol>
+          {
+            pages.map((entry) => (
+              <li>
+                <a
+                  href={`${base}/docs/${entry.slug}`}
+                  aria-current={entry.slug === slug ? "page" : undefined}
+                >
+                  <span class="n">{String(entry.order).padStart(2, "0")}</span>
+                  {entry.title}
+                </a>
+                {entry.slug === slug && entry.headings.length > 0 && (
+                  <ul class="sub">
+                    {entry.headings.map((heading) => (
+                      <li><a href={`#${heading.slug}`}>{heading.text}</a></li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))
+          }
+        </ol>
+      </nav>
+    </aside>
+
+    <main class="docs-main" id="doc">
+      <article class="prose">
+        <page.Content />
+      </article>
+
+      <nav class="docs-pager" aria-label="Previous and next">
+        {previous ? (
+          <a class="pager-link" href={`${base}/docs/${previous.slug}`}>
+            <span>Previous</span>
+            {previous.title}
+          </a>
+        ) : <span />}
+        {next && (
+          <a class="pager-link is-next" href={`${base}/docs/${next.slug}`}>
+            <span>Next</span>
+            {next.title}
+          </a>
+        )}
+      </nav>
+
+      <footer class="docs-foot">
+        <p>
+          This page is generated from{" "}
+          <a
+            href={`https://github.com/Turnpike-org/turnpike/blob/main/docs/${String(page.order).padStart(2, "0")}.${page.slug}.md`}
+            rel="noopener"
+          >
+            <code>docs/{String(page.order).padStart(2, "0")}.{page.slug}.md</code>
+          </a>{" "}
+          in the repository. If this site is unavailable, that file is the same
+          content and renders on GitHub.
+        </p>
+      </footer>
+    </main>
+  </div>
+</Base>

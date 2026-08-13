@@ -70,7 +70,7 @@ const steps = [
   },
   {
     title: "The resource comes back with a settled hash",
-    body: "200, the thing the client asked for, and a PAYMENT-RESPONSE header carrying the transaction hash. Roughly twenty seconds end to end, most of it waiting for the ledger to close.",
+    body: "200, the thing the client asked for, and a PAYMENT-RESPONSE header carrying the transaction hash. A few seconds end to end: settlement takes a median of 3.9 seconds across 135 measured payments, most of that waiting for the ledger to close.",
     endpoints: [],
   },
 ];
@@ -342,6 +342,12 @@ const notBuilt = [
         Stellar Asset Contract precisely so a stranger can reproduce this unattended. Needs Node
         22.12+ and Docker. Two to four minutes, most of it building images.
       </p>
+
+      <p class="after-code">
+        The full documentation — payment lifecycle, architecture, API semantics,
+        measured reliability, and the scope boundary in detail — is at{" "}
+        <a href="/docs">/docs</a>.
+      </p>
     </div>
   </section>
 
@@ -353,6 +359,7 @@ const notBuilt = [
         package. Typeset in Geist, under the SIL Open Font License.
       </p>
       <nav class="footer-links" aria-label="Elsewhere">
+        <a href="/docs">Documentation</a>
         <a href={REPO} rel="noopener">Repository</a>
         <a href="https://github.com/Turnpike-org" rel="noopener">Turnpike-org</a>
         <a href="https://github.com/x402-foundation/x402" rel="noopener">x402 specification</a>

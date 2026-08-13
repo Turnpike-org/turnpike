@@ -41,7 +41,9 @@ jobs:
 
       - name: Build
         # Primary hosting is Vercel (see site/vercel.json); this Pages deploy is
-        # a fallback that serves from the project-page path.
+        # a fallback served from the project-page path, so it needs that base.
+        env:
+          SITE_BASE: /turnpike/
         run: npm --prefix site run build
 
       - uses: actions/configure-pages@v6

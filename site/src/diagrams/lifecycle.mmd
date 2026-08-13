@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant C as Agent / x402 client
+    participant R as Seller's resource server
+    participant F as Turnpike facilitator
+    participant S as Stellar (Soroban RPC + SAC)
+
+    C->>R: 1. GET /paid-resource
+    R-->>C: 2. 402 Payment Required + accepts[]
+    Note over C: 3. Select terms, sign a Soroban<br/>authorization entry
+    C->>R: 4. Retry with PAYMENT-SIGNATURE header
+    R->>F: 5. POST /verify
+    F-->>R: 6. { isValid, reason? }
+    Note over R: 7. Do the actual work
+    R->>F: 8. POST /settle
+    F->>S: 9. Submit transaction, sponsor fee
+    S-->>F: 10. Settled — tx hash
+    F-->>R: 11. { success, transaction }
+    R-->>C: 12. 200 OK + resource + PAYMENT-RESPONSE
+    Note over F: 13. Catalog the resource — DESIGNED,<br/>NOT BUILT (async, off the hot path)
