@@ -1,18 +1,20 @@
 # Security policy
 
 Turnpike moves money. It is currently a testnet-only implementation, but the
-same code paths are intended for mainnet, so we treat reports against testnet as
-seriously as we will treat reports against production.
+same code paths are intended for mainnet, so I treat reports against testnet as
+seriously as I will treat reports against production.
 
 ## Reporting a vulnerability
 
 **Do not open a public issue for a security report.**
 
-Report privately to **`<SECURITY_CONTACT_PLACEHOLDER — replace with a monitored address>`**.
+**Preferred:** GitHub private vulnerability reporting — the *Report a
+vulnerability* button on the
+[repository's Security tab](https://github.com/Turnpike-org/turnpike/security/advisories/new).
+It is private, it threads the discussion with the fix, and it lands in
+notifications rather than an inbox where it can be missed.
 
-If you prefer GitHub's private vulnerability reporting, use the *Report a
-vulnerability* button on the repository's Security tab; it delivers to the
-maintainers without disclosing publicly.
+**Alternative:** email **jagadeesh.b@grainlify.com**.
 
 A useful report includes:
 
@@ -34,19 +36,19 @@ concept.
 | Initial assessment, with a severity and a plan | 10 working days |
 | Fix or documented mitigation for critical and high findings | 30 days from assessment |
 
-If we disagree that a report is a vulnerability we will say so, and why, rather
+If I disagree that a report is a vulnerability I will say so, and why, rather
 than letting it go quiet.
 
-We will credit reporters who want credit, and respect a request to stay
-anonymous. We do not currently run a paid bounty programme.
+I will credit reporters who want credit, and respect a request to stay
+anonymous. I do not currently run a paid bounty programme.
 
 ## Disclosure
 
-We prefer coordinated disclosure. Once a fix ships, we will publish what the
+I prefer coordinated disclosure. Once a fix ships, I will publish what the
 issue was, what it allowed, and what changed — the same standard the rest of
 this repository is written to. If a report affects an upstream dependency such
-as `@x402/stellar` or the x402 specification, we will report it upstream and say
-so in our own disclosure.
+as `@x402/stellar` or the x402 specification, I will report it upstream and say
+so in my own disclosure.
 
 ## Supported versions
 
@@ -76,9 +78,9 @@ After the first tagged release this table will list supported release lines.
 
 - The Stellar network, Soroban RPC providers, and Friendbot.
 - `@x402/stellar` and `@x402/core` themselves — report those to the
-  [x402 Foundation](https://github.com/x402-foundation/x402), though we are glad
+  [x402 Foundation](https://github.com/x402-foundation/x402), though I am glad
   to help route a report.
-- Findings that require a compromised operator machine or a leaked key that we
+- Findings that require a compromised operator machine or a leaked key that I
   did not leak.
 - The known limitations already documented in
   [`NOTES.md`](NOTES.md) §4 — the RPC ledger-skew defect, `/verify` staleness
@@ -99,5 +101,5 @@ Stated so reporters know where the value is not:
 
 The recipient and amount are bound inside the payer's signature, so a
 compromised facilitator cannot redirect a payment or inflate a charge. If you
-find a way to do either, that is a critical finding and we want to hear about it
+find a way to do either, that is a critical finding and I want to hear about it
 immediately.

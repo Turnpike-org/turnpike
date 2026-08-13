@@ -2,7 +2,7 @@
 
 Findings from studying the SDF reference implementation and from running real
 payments on Stellar testnet. Written for whoever picks this codebase up next,
-including us.
+including me.
 
 ---
 
@@ -23,7 +23,7 @@ A pnpm + turbo monorepo:
 ### What the reference facilitator already does well
 
 - Wraps `x402Facilitator` (from `@x402/core/facilitator`) with `ExactStellarScheme`
-  (from `@x402/stellar/exact/facilitator`) — no protocol logic of its own. We
+  (from `@x402/stellar/exact/facilitator`) — no protocol logic of its own. I
   copied that posture exactly; it is the right one.
 - Optional bearer-token auth with a constant-time comparison, `helmet`, CORS,
   and a 120 req/min rate limit on the paying endpoints.
@@ -34,34 +34,34 @@ A pnpm + turbo monorepo:
   script that creates 19 sponsored-reserve channel accounts in one transaction.
 - Utility scripts for re-funding accounts after a testnet reset.
 
-### Gaps relative to our acceptance criteria
+### Gaps relative to my acceptance criteria
 
 Not criticisms of the reference — it is an example, not a product — but these
-are the things we had to add:
+are the things I had to add:
 
 1. **Rejections do not explain themselves.** `@x402/stellar` returns machine
    codes (`invalid_exact_stellar_payload_wrong_asset`, …) with
    `invalidMessage` left `undefined` on essentially every path. The reference
    passes those straight through, so an integrator gets a code and no sentence.
-   We map all 30-odd codes to human-readable messages (`facilitator/src/reasons.ts`)
+   I map all 30-odd codes to human-readable messages (`facilitator/src/reasons.ts`)
    and the HTTP layer refuses to emit a rejection without both.
 2. **Unsupported scheme/network becomes a bare 500.** `x402Facilitator.verify()`
    *throws* — rather than returning a rejection — when no scheme is registered
    for the requested pair. The reference catches it and answers
-   `500 {"error": "Internal Server Error"}`. We classify the throw and answer
+   `500 {"error": "Internal Server Error"}`. I classify the throw and answer
    `200 {isValid: false, invalidReason: "unsupported_scheme_or_network", …}`.
 3. **Malformed-request responses are a different shape.** The reference returns
    `400 {"error": "..."}`, which is neither a `VerifyResponse` nor a
-   `SettleResponse`. We return the protocol shape with the reason fields
+   `SettleResponse`. I return the protocol shape with the reason fields
    populated, so a client only has to understand one schema.
 4. **No conformance harness.** The reference's tests mock `@x402/core` and
    `@x402/stellar` entirely (`vi.mock`), so they prove the Express wiring and
-   nothing about whether a real client can pay. That is the gap our
+   nothing about whether a real client can pay. That is the gap my
    `conformance/` harness exists to fill.
 5. **The demo cannot be reproduced without a manual faucet visit.** The paywall
    server passes `price` as a `Money` string, which `ExactStellarScheme.parsePrice`
    resolves to USDC. Testnet USDC comes from the Circle web faucet, so a clean
-   clone cannot reach a working payment unattended. We pass `price` as an
+   clone cannot reach a working payment unattended. I pass `price` as an
    explicit `AssetAmount` and default it to the native XLM SAC, which Friendbot
    funds — see §3.
 6. **Root `pnpm build` fails from a clean clone.** `@x402-stellar/paywall`'s
@@ -80,7 +80,7 @@ ledger  4091144   successful: true   fee_charged: 20554 stroops
 source  GB5HPDJNCJUMRDGMEACLSCO3EL37FPCGSILK6Z6T52HT374W7VRE6VPI  (the facilitator, not the payer)
 ```
 
-We ran it with the native XLM SAC rather than USDC, for the funding reason
+I ran it with the native XLM SAC rather than USDC, for the funding reason
 above. The full paywall-server + browser-client path was not exercised, because
 it is USDC-only.
 
@@ -122,7 +122,7 @@ resolves to that network's USDC) or an explicit `AssetAmount`
 (`{ asset: "C…", amount: "100000" }`). The scheme is asset-agnostic — it moves
 whatever SEP-41 token contract the requirements name.
 
-We default to the **native XLM Stellar Asset Contract**
+I default to the **native XLM Stellar Asset Contract**
 (`CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` on testnet) because
 Friendbot funds XLM. That is what makes `./demo.sh` work from a clean clone with
 no faucet visit, no wallet, and no shared secret — and what lets CI create fresh
@@ -146,7 +146,7 @@ SEP-41 address works too.
 
 ---
 
-## 4. Things that bit us on real testnet
+## 4. Things that bit me on real testnet
 
 ### 4.1 RPC ledger-height skew breaks otherwise valid payments
 
@@ -173,7 +173,7 @@ facilitator's, a perfectly good payment is rejected as
 `invalid_exact_stellar_signature_expiration_too_far`.
 
 **How often, measured.** The honest answer is that it depends entirely on the
-state of the RPC pool, and we have seen both extremes:
+state of the RPC pool, and I have seen both extremes:
 
 | Window | Where | Payments | Failed | Skew events |
 |---|---|---|---|---|
@@ -182,7 +182,7 @@ state of the RPC pool, and we have seen both extremes:
 | 2026-08-12 14:17 UTC | GitHub runners (probe) | 15 | 0 | 0 |
 | 2026-08-12 14:56 UTC | GitHub runners (probe) | 15 | **1** | **1, retry exhausted** |
 
-In the healthy window we also sampled the failure predicate directly — read the
+In the healthy window I also sampled the failure predicate directly — read the
 ledger, wait 1.2s, read again, 299 times — and never once saw the client read
 land more than 0 ledgers ahead (`{0: 182, -1: 117}`). So in that window the
 un-retried failure rate was also indistinguishable from zero, and the 30/30
@@ -190,7 +190,7 @@ success rate does **not** demonstrate the retry working: the retry never fired.
 What the retry demonstrably did is rescue the one `/settle` occurrence in the
 degraded window.
 
-**Our mitigation, and its measured limit.** The facilitator retries that one
+**My mitigation, and its measured limit.** The facilitator retries that one
 rejection up to twice, 750ms apart (`facilitator/src/app.ts`). It re-samples the
 ledger height and relaxes nothing: the package's check runs in full on every
 attempt, and settle only retries when nothing was submitted.
@@ -216,15 +216,15 @@ deliberate trade: a slow "no" beats a lost payment.
 
 **This fix is unvalidated in the wild.** The reasoning is sound and
 `test/retry.test.ts` asserts the attempt count and the spacing with fake
-timers, but no degraded window has occurred since the change. We have fixed the
-mechanism; we have not yet watched it save a payment. The probe keeps running,
+timers, but no degraded window has occurred since the change. I have fixed the
+mechanism; I have not yet watched it save a payment. The probe keeps running,
 and `scripts/collect-probe-results.sh` will show a non-zero `skewRetries`
 column against a passing run the first time it does.
 
 **The real fix** belongs upstream: either the client should ask the facilitator
 what expiration it will accept, or both sides should pin the same RPC node, or
 the tolerance should exceed the observed node spread. Written up as a bug report
-for `x402-foundation/x402`; not our call to file it under this repo's name.
+for `x402-foundation/x402`; not my call to file it under this repo's name.
 
 ### 4.2 One in-flight settlement at a time
 
@@ -268,7 +268,7 @@ Every transitive dependency across all three packages, by license:
 393 MIT · 22 Apache-2.0 · 13 ISC · 12 BSD-3-Clause · 4 BSD-2-Clause · 1 Unlicense
 ```
 
-No GPL, AGPL, SSPL, BUSL or non-commercial licenses anywhere in the tree. We
+No GPL, AGPL, SSPL, BUSL or non-commercial licenses anywhere in the tree. I
 took no code from the AGPL "Built on Stellar" facilitator or the OpenZeppelin
 Relayer x402 plugin; the implementation comes from the Apache-2.0
 `@x402/stellar` package and this repository ships under Apache-2.0.

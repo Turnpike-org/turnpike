@@ -117,7 +117,7 @@ npm --prefix facilitator test                # 59 unit tests
 
 ## What the conformance harness checks
 
-`conformance/` is the deliverable that matters: it is what turns "we built a
+`conformance/` is the deliverable that matters: it is what turns "I built a
 facilitator" into something a reviewer can verify in one command. It runs 17
 checks in three groups, and exits non-zero if any fails.
 
@@ -175,7 +175,7 @@ together, so a valid payment can be rejected as
 facilitator retries that one rejection twice, 750ms apart, which re-samples the
 ledger height.
 
-**The retry is not sufficient, and we have the run that proves it.** On
+**The retry is not sufficient, and I have the run that proves it.** On
 2026-08-12 a scheduled probe hit a degraded window on a GitHub runner. The
 retry fired, was exhausted, and the payment still failed:
 
@@ -232,6 +232,16 @@ A probe workflow runs five times a day at spread hours specifically to catch a
 degraded window; `scripts/collect-probe-results.sh` aggregates every run into
 raw per-payment counts, including whether the retry ever fired. Anyone can run
 it against this repository.
+
+**One reproducibility exception, named rather than hidden.** The facilitator,
+demo server and conformance packages install with `npm ci` against committed
+lockfiles, so their builds are reproducible — that is the path every claim on
+this page depends on. The marketing site under `site/` is the exception: it
+installs with `npm install`, because its lockfile is written on macOS and the
+deploy runs on Linux, where sharp's per-platform optional dependencies differ
+and `npm ci` refuses the mismatch. Nothing the site builds affects a payment,
+a measurement, or CI, but it is a weaker guarantee than the rest and worth
+knowing before someone finds it.
 
 **Two further limits, both documented rather than fixed:**
 
