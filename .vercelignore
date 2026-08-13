@@ -1,0 +1,8 @@
+# Uploaded to Vercel only what the site build needs.
+node_modules
+site/node_modules
+site/dist
+.probe-results
+facilitator/node_modules
+demo-server/node_modules
+conformance/node_modules

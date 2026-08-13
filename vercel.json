@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "astro",
-  "buildCommand": "SITE_BASE=/ SITE_URL=https://turnpike.0xo.in npm run build",
-  "outputDirectory": "dist",
+  "framework": null,
+  "buildCommand": "SITE_BASE=/ SITE_URL=https://turnpike.0xo.in npm --prefix site run build",
+  "outputDirectory": "site/dist",
   "cleanUrls": true,
   "headers": [
     {
@@ -27,5 +27,6 @@
         }
       ]
     }
-  ]
+  ],
+  "installCommand": "npm --prefix site install --no-audit --no-fund"
 }

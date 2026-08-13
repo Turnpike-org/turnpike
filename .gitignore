@@ -22,3 +22,5 @@ UPSTREAM-ISSUE-DRAFT.md
 # Cached probe artifacts fetched by scripts/collect-probe-results.sh
 .probe-results/
 .vercel
+.vercel
+.env*

@@ -37,7 +37,7 @@ jobs:
           node-version: "22"
 
       - name: Install
-        run: npm --prefix site ci
+        run: npm --prefix site install --no-audit --no-fund
 
       - name: Build
         # Primary hosting is Vercel (see site/vercel.json); this Pages deploy is
