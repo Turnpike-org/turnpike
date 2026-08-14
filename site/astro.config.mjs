@@ -3,6 +3,7 @@ import { defineConfig } from "astro/config";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
 
+import rehypeDocsLinks from "./plugins/rehype-docs-links.mjs";
 import rehypeStaticMermaid from "./plugins/rehype-static-mermaid.mjs";
 
 // Hosted on Vercel at a custom domain; `base` and `site` stay overridable so a
@@ -20,6 +21,7 @@ export default defineConfig({
     shikiConfig: { theme: "github-dark-default", wrap: false },
     rehypePlugins: [
       rehypeStaticMermaid,
+      rehypeDocsLinks,
       rehypeSlug,
       [
         rehypeAutolinkHeadings,
