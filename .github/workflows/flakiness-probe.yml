@@ -8,7 +8,7 @@ name: flakiness probe
 # exists to put a number on how often that costs a payment, rather than
 # guessing from one developer's machine.
 #
-# Runs on a temporary schedule (below) and on demand. It spends testnet XLM;
+# Runs on the schedule below and on demand. It spends testnet XLM;
 # every account it uses is created by the run itself via Friendbot.
 
 on:
@@ -19,12 +19,22 @@ on:
         required: false
         default: "3"
 
-  # TEMPORARY — remove after 2026-08-14.
+  # Kept running past the original 2026-08-14 review date, deliberately.
   #
-  # Spread across the clock on purpose: the fault this is looking for depends
-  # on the health of the public Soroban RPC pool, which varies through the day.
-  # A probe that always ran at the same hour would keep sampling the same
-  # conditions. Times are UTC.
+  # One question is still open: the ledger-skew retry has been simulated
+  # (facilitator/test/skew-recovery.test.ts) but never observed recovering a
+  # real degraded window, because none has occurred since the fix landed. This
+  # probe is the only thing that can close that gap, and the fault is bursty —
+  # two events inside one hour on 2026-08-11, then nothing across days of
+  # sampling — so continuing to sample is worth more than a tidy repository.
+  #
+  # scripts/collect-probe-results.sh labels each skew event RECOVERED or
+  # EXHAUSTED, so the answer will be unambiguous when it arrives. Remove this
+  # block once a live recovery is recorded, or when the submission is decided.
+  #
+  # Spread across the clock on purpose: the fault depends on the health of the
+  # public Soroban RPC pool, which varies through the day. A probe that always
+  # ran at the same hour would keep sampling the same conditions. Times are UTC.
   schedule:
     - cron: "13 1 * * *"
     - cron: "47 6 * * *"

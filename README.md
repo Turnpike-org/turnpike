@@ -88,6 +88,45 @@ defaults to the native XLM Stellar Asset Contract precisely so that a stranger
 can reproduce this in one command. Expect it to take two to four minutes, most
 of it Docker build time.
 
+### Settle a payment yourself
+
+You do not need anything from me to do this — no key, no funded account, no
+credential of any kind. The command creates its own Stellar testnet accounts
+through Friendbot and pays with them.
+
+**Prerequisites:** Node.js 22.12+, Docker with Compose running, an internet
+connection, and ports 4021 and 4022 free.
+
+```bash
+git clone https://github.com/Turnpike-org/turnpike.git
+cd turnpike
+./demo.sh
+```
+
+**What success looks like.** Two to four minutes, most of it Docker build. The
+run ends with:
+
+```
+17 passed, 0 failed
+
+Settled transaction: <64-hex hash>
+Explorer:            https://stellar.expert/explorer/testnet/tx/<hash>
+```
+
+Open that explorer link. The transaction is on public Stellar testnet, and its
+fee account is the facilitator account the run created moments earlier — not
+the payer, which is fee sponsorship being true on-chain rather than in JSON.
+
+The 17 checks are listed below. Should the run fail, `./demo.sh` prints the two
+likely causes — a testnet reset, or a lagging RPC pool — with the exact recovery
+command.
+
+Verified from a clean clone on 2026-08-14: `git clone` into an empty directory,
+one command, no `.env` present beforehand, settling
+[`63bb9061…6acb9d`](https://stellar.expert/explorer/testnet/tx/63bb9061b4ec78852ebade000696f7e033fa6ae17c740bc893ddd644c36acb9d)
+at ledger 4 141 832. That was still my machine, though. **No third party has
+run this yet**, and that is the evidence I would most like to have.
+
 ### Step by step, if you prefer
 
 ```bash
