@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Turnpike — SCF submission thumbnail</title>
+
+    <!--
+      Submission thumbnail, 1920×1080.
+
+      Regenerate with:  npm run thumbnail   (from the repository root)
+
+      The governing constraint is the grid this lands in: roughly 300px wide,
+      among ~175 other submissions. That is a 6.4× reduction, so anything under
+      about 2% of the width — 38px here — is gone. Hence three sizes only, no
+      paragraph text, no diagram, no screenshot. The wordmark has to survive
+      being 40px tall and the tagline has to survive being 10px tall; the
+      transaction hash is deliberately below that threshold, because it is for
+      the person who opens the image full size, not for the grid.
+
+      Design tokens, fonts and the lane-marking motif are lifted from
+      site/src/styles/global.css so this reads as the same product as the site.
+    -->
+    <style>
+      @font-face {
+        font-family: "Geist";
+        src: url("../site/public/fonts/Geist-Variable.woff2") format("woff2-variations");
+        font-weight: 100 900;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Geist Mono";
+        src: url("../site/public/fonts/GeistMono-Variable.woff2") format("woff2-variations");
+        font-weight: 100 900;
+        font-style: normal;
+      }
+
+      :root {
+        --bg: #0a0b0d;
+        --text: #e9ebef;
+        --text-dim: #99a0ab;
+        --text-faint: #7c838e;
+        --line: #1c2027;
+        --accent: #f2b33d;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+
+      body {
+        position: relative;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Geist", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 132px 150px;
+      }
+
+      /* The gate: a toll barrier's diagonal hatching, scaled up so the stripes
+         still read as stripes rather than mush at thumbnail size. */
+      .barrier {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 14px;
+        background-image: repeating-linear-gradient(
+          -45deg,
+          var(--accent) 0 18px,
+          transparent 18px 36px
+        );
+        opacity: 0.85;
+      }
+
+      .wordmark {
+        font-size: 268px;
+        font-weight: 580;
+        letter-spacing: -0.055em;
+        line-height: 0.92;
+      }
+
+      .tagline {
+        margin-top: 40px;
+        font-size: 72px;
+        font-weight: 400;
+        letter-spacing: -0.022em;
+        line-height: 1.18;
+        color: var(--text-dim);
+        max-width: 24ch;
+      }
+
+      .tagline b {
+        color: var(--text);
+        font-weight: 500;
+      }
+
+      /* Lane markings, as between sections on the site — the road under the
+         toll gate, at a dash length that survives the downscale. */
+      .lane {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 190px;
+        height: 5px;
+        background-image: repeating-linear-gradient(
+          to right,
+          var(--accent) 0 104px,
+          transparent 104px 168px
+        );
+        opacity: 0.5;
+      }
+
+      .foot {
+        position: absolute;
+        left: 150px;
+        right: 150px;
+        bottom: 92px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 60px;
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: 27px;
+        letter-spacing: -0.01em;
+        color: var(--text-faint);
+      }
+
+      .foot .hash {
+        color: var(--text-dim);
+      }
+
+      .foot .label {
+        color: var(--text-faint);
+      }
+
+      .foot .licence {
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="barrier"></div>
+
+    <h1 class="wordmark">Turnpike</h1>
+    <p class="tagline"><b>x402 payments</b> and resource discovery for Stellar</p>
+
+    <div class="lane"></div>
+
+    <div class="foot">
+      <span>
+        <span class="label">settled in CI&nbsp;&nbsp;</span>
+        <span class="hash">b983f668aae5de59c88e512c510f1e95ca6654780eba2a3c1b903359934cd0ea</span>
+      </span>
+      <span class="licence">Apache-2.0</span>
+    </div>
+  </body>
+</html>

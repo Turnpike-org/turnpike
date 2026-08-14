@@ -16,7 +16,8 @@
     "dev:demo-server": "npm --prefix demo-server run dev",
     "test": "npm --prefix facilitator test",
     "conformance": "npm --prefix conformance start",
-    "demo": "./demo.sh"
+    "demo": "./demo.sh",
+    "thumbnail": "node scripts/render-thumbnail.mjs"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "16.1.0"
