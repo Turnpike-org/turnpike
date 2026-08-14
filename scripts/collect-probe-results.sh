@@ -120,9 +120,23 @@ console.log(`payments w/ skew retry: ${withSkew.length}`);
 console.log(`total skew retries    : ${rows.reduce((a, r) => a + r.skewRetries, 0)}`);
 
 if (withSkew.length) {
+  // A skew event with exit 0 is the thing we have never seen live: the retry
+  // fired and the payment still went through. Call it out, because it is the
+  // only evidence that would move the mitigation from "simulated" to
+  // "validated" on the reliability page.
+  const recovered = withSkew.filter((r) => r.exit === 0 && r.failed === 0);
+  const exhausted = withSkew.filter((r) => !(r.exit === 0 && r.failed === 0));
+
   console.log("\nskew events (the RPC pool diverged; retry path exercised):");
   for (const r of withSkew) {
-    console.log(`  ${r.when} probe ${r.runId} shard ${r.shard} run ${r.run}: ${r.skewRetries} retries, exit ${r.exit}`);
+    const verdict = r.exit === 0 && r.failed === 0 ? "RECOVERED" : "EXHAUSTED — payment lost";
+    console.log(`  ${r.when} probe ${r.runId} shard ${r.shard} run ${r.run}: ${r.skewRetries} retries → ${verdict}`);
+  }
+  console.log(`\n  recovered by the retry : ${recovered.length}`);
+  console.log(`  exhausted, lost        : ${exhausted.length}`);
+  if (recovered.length > 0) {
+    console.log("\n  *** A live degraded window was recovered. The reliability page still");
+    console.log("      describes the mitigation as simulated-only — update it. ***");
   }
   console.log("\nFacilitator logs for those runs are in the same cache directory:");
   console.log("  grep -l \"ledger-height skew\" " + work + "/*/probe-shard-*/facilitator-shard-*.log");

@@ -216,8 +216,11 @@ What that supports, stated carefully:
 - The fault is **real, rare, and confirmed on neutral infrastructure**: 1
   failure in 63 measured payments overall, 1 in 15 within the single degraded
   probe.
-- The retry has been **changed in response to that run, and the new shape is
-  itself unvalidated**. It was 2 attempts 750ms apart, which could not outlast a
+- The retry has been **changed in response to that run. The new shape recovers a
+  simulated 3-ledger divergence at the HTTP boundary
+  (`facilitator/test/skew-recovery.test.ts`), and its spacing is unit-tested,
+  but it has never been observed recovering a real degraded window** — none has
+  occurred since. It was 2 attempts 750ms apart, which could not outlast a
   ~5s ledger close; it is now 2 attempts 6s apart (`LEDGER_SKEW_RETRIES`,
   `LEDGER_SKEW_RETRY_DELAY_MS`), so a lagging node has time to catch up. That
   reasoning is sound and unit-tested, but **no degraded window has been observed

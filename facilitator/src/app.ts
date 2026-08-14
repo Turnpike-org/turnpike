@@ -201,8 +201,17 @@ export function assertSupportedIsTruthful(
  * @param logger - Request logger
  * @returns The Express app plus the facilitator it wraps
  */
-export function createApp(config: Config, logger: Logger): FacilitatorApp {
-  const facilitator = createFacilitator(config, logger);
+export function createApp(
+  config: Config,
+  logger: Logger,
+  /**
+   * Test seam. Integration tests substitute a facilitator that reproduces the
+   * RPC ledger-skew rejection deterministically; production always builds the
+   * real one.
+   */
+  facilitatorOverride?: x402Facilitator,
+): FacilitatorApp {
+  const facilitator = facilitatorOverride ?? createFacilitator(config, logger);
   const app: Express = express();
 
   app.disable("x-powered-by");
